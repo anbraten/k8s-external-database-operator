@@ -3,8 +3,8 @@ package adapters
 import (
 	"database/sql"
 
+	// SQL driver for mysql
 	_ "github.com/go-sql-driver/mysql"
-	// TODO check is this a proper import?
 )
 
 type mysqlAdapter struct {
@@ -14,28 +14,14 @@ type mysqlAdapter struct {
 	db            *sql.DB
 }
 
-func (adapter mysqlAdapter) runSQL(sql string) error {
-	insert, err := adapter.db.Query(sql)
-
-	// if there is an error inserting, handle it
-	if err != nil {
-		return err
-	}
-
-	// be careful deferring Queries if you are using transactions
-	defer insert.Close()
-
-	return nil
-}
-
 func (adapter mysqlAdapter) CreateDatabase(name string) error {
-	// TODO use proper sql query
-	return adapter.runSQL("CREATE db")
+	_, err := adapter.db.Exec("CREATE DATABASE IF NOT EXISTS $1;", name)
+	return err
 }
 
 func (adapter mysqlAdapter) DeleteDatabase(name string) error {
-	// TODO use proper sql query
-	return adapter.runSQL("DROP db")
+	_, err := adapter.db.Exec("DROP DATABASE IF EXISTS $1;", name)
+	return err
 }
 
 func (adapter mysqlAdapter) UpdateDatabaseUser(username string, password string) error {
