@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/anbraten/k8s-external-database-operator/adapters"
 	rzabdev1 "github.com/anbraten/k8s-external-database-operator/api/v1"
 )
 
@@ -66,9 +67,29 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	log.Info("Create new database")
 
-	// check if mysql database exists
-	// create new database if not
-	// update if exits and updates are necessary
+	// TODO check if database already exists
+	// TODO create new database if not
+	// TODO update if exits and updates are necessary
+
+	db, err := r.getDatabaseConnection("mysql") // TODO use type from manifest
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = db.CreateDatabase("test") // TODO use db name from manifest
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = db.DeleteDatabase("test") // TODO use db name from manifest
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = db.Close()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Check if the Database instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
@@ -103,23 +124,41 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
+func (r *DatabaseReconciler) getDatabaseConnection(databaseType string) (adapters.DatabaseAdapter, error) {
+	if databaseType == "mysql" {
+		mysqlHost := "localhost"       // TODO use env
+		mysqlAdminUsername := "admin"  // TODO use env
+		mysqlAdminPassword := "secure" // TODO use env
+		return adapters.CreateConnection("mysql", mysqlHost, mysqlAdminUsername, mysqlAdminPassword)
+	}
+
+	if databaseType == "couchdb" {
+		couchdbURL := "http://localhost" // TODO use env
+		couchdbAdminUsername := "admin"  // TODO use env
+		couchdbAdminPassword := "secure" // TODO use env
+		return adapters.CreateConnection("couchdb", couchdbURL, couchdbAdminUsername, couchdbAdminPassword)
+	}
+
+	return adapters.CreateConnection(databaseType, "", "", "")
+}
+
 func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, m *rzabdev1.Database) error {
 	// TODO(user): Add the cleanup steps that the operator
 	// needs to do before the CR can be deleted. Examples
 	// of finalizers include performing backups and deleting
 	// resources that are not owned by this CR, like a PVC.
-	log.Info("Successfully finalized memcached")
+	log.Info("Successfully removed database")
 	return nil
 }
 
 func (r *DatabaseReconciler) addFinalizer(log logr.Logger, m *rzabdev1.Database) error {
-	log.Info("Adding Finalizer for the Memcached")
+	log.Info("Adding Finalizer for the database")
 	controllerutil.AddFinalizer(m, databaseFinalizer)
 
 	// Update CR
 	err := r.Update(context.TODO(), m)
 	if err != nil {
-		log.Error(err, "Failed to update Memcached with finalizer")
+		log.Error(err, "Failed to update database with finalizer")
 		return err
 	}
 	return nil

@@ -25,7 +25,7 @@ import (
 
 // DatabaseSpec defines the desired state of Database
 type DatabaseSpec struct {
-	// Type of the database. (currently supported: mysql)
+	// Type of the database. (currently supported: mysql, couchdb, mongo, postgres)
 	Type string `json:"type,omitempty"`
 	// Name of the database
 	Database string `json:"database,omitempty"`
