@@ -1,7 +1,9 @@
 apiVersion: rzab.de/v1
 kind: Database
 metadata:
-  name: database-sample
+  name: guestbook-database
 spec:
-  # Add fields here
-  foo: bar
+  type: mysql
+  database: guestbook
+  username: guestbook-admin
+  password: iwonttellyou
