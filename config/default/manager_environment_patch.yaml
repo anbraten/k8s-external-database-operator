@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+      env:
+      - name: MYSQL_HOST
+        value: "127.0.0.1"
+      - name: MYSQL_ADMIN_USERNAME
+        value: "admin"
+      - name: MYSQL_ADMIN_PASSWORD
+        value: ""
+      - name: COUCHDB_URL
+        value: "http://127.0.0.1"
+      - name: COUCHDB_ADMIN_USERNAME
+        value: "admin"
+      - name: COUCHDB_ADMIN_PASSWORD
+        value: ""

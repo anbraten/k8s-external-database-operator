@@ -297,6 +297,19 @@ spec:
             memory: 20Mi
         securityContext:
           allowPrivilegeEscalation: false
+      env:
+      - name: MYSQL_HOST
+        value: 127.0.0.1
+      - name: MYSQL_ADMIN_USERNAME
+        value: admin
+      - name: MYSQL_ADMIN_PASSWORD
+        value: ""
+      - name: COUCHDB_URL
+        value: http://127.0.0.1
+      - name: COUCHDB_ADMIN_USERNAME
+        value: admin
+      - name: COUCHDB_ADMIN_PASSWORD
+        value: ""
       securityContext:
         runAsNonRoot: true
       serviceAccountName: external-database-operator-controller-manager
