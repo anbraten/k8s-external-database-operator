@@ -73,9 +73,11 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
+	log.Info("Connected to database server")
+
 	err, hasDatabase := db.HasDatabase(database.Spec.Database)
 	if !hasDatabase {
-		log.Info("Create new database")
+		log.Info("Create new database: '" + database.Spec.Database + "'")
 
 		err = db.CreateDatabase(database.Spec.Database)
 		if err != nil {
@@ -85,7 +87,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	err, hasDatabaseUserWithAccess := db.HasDatabaseUserWithAccess(database.Spec.Username, database.Spec.Database)
 	if !hasDatabaseUserWithAccess {
-		log.Info("Create new user with access to the database")
+		log.Info("Create new user '" + database.Spec.Username + "' with access to the database '" + database.Spec.Database + "'")
 
 		err = db.UpdateDatabaseUser(database.Spec.Username, database.Spec.Password, database.Spec.Database)
 		if err != nil {
@@ -98,7 +100,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	log.Info("Created new database '" + database.Spec.Database + "' with full access for user: '" + database.Spec.Username + "'")
+	log.Info("Created database and user with full access to it")
 
 	// Check if the Database instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
@@ -138,6 +140,11 @@ func (r *DatabaseReconciler) getDatabaseConnection(databaseType string) (adapter
 		mysqlHost := os.Getenv("MYSQL_HOST")
 		mysqlAdminUsername := os.Getenv("MYSQL_ADMIN_USERNAME")
 		mysqlAdminPassword := os.Getenv("MYSQL_ADMIN_PASSWORD")
+
+		if mysqlHost == "" || mysqlAdminUsername == "" || mysqlAdminPassword == "" {
+			return nil, errors.NewBadRequest("Mysql database not configured (provide: MYSQL_HOST, MYSQL_ADMIN_USERNAME, MYSQL_ADMIN_PASSWORD)")
+		}
+
 		return adapters.CreateConnection("mysql", mysqlHost, mysqlAdminUsername, mysqlAdminPassword)
 	}
 
@@ -145,6 +152,11 @@ func (r *DatabaseReconciler) getDatabaseConnection(databaseType string) (adapter
 		couchdbURL := os.Getenv("COUCHDB_URL")
 		couchdbAdminUsername := os.Getenv("COUCHDB_ADMIN_USERNAME")
 		couchdbAdminPassword := os.Getenv("COUCHDB_ADMIN_PASSWORD")
+
+		if couchdbURL == "" || couchdbAdminUsername == "" || couchdbAdminPassword == "" {
+			return nil, errors.NewBadRequest("Couchdb database not configured (provide: COUCHDB_URL, COUCHDB_ADMIN_USERNAME, COUCHDB_ADMIN_PASSWORD)")
+		}
+
 		return adapters.CreateConnection("couchdb", couchdbURL, couchdbAdminUsername, couchdbAdminPassword)
 	}
 
