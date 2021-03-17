@@ -68,23 +68,29 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	log.Info("Create new database")
-
 	db, err := r.getDatabaseConnection(database.Spec.Type)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// TODO only if needed
-	err = db.CreateDatabase(database.Spec.Database)
-	if err != nil {
-		return ctrl.Result{}, err
+	err, hasDatabase := db.HasDatabase(database.Spec.Database)
+	if !hasDatabase {
+		log.Info("Create new database")
+
+		err = db.CreateDatabase(database.Spec.Database)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
-	// TODO only if needed
-	err = db.UpdateDatabaseUser(database.Spec.Username, database.Spec.Password)
-	if err != nil {
-		return ctrl.Result{}, err
+	err, hasDatabaseUserWithAccess := db.HasDatabaseUserWithAccess(database.Spec.Username, database.Spec.Database)
+	if !hasDatabaseUserWithAccess {
+		log.Info("Create new user with access to the database")
+
+		err = db.UpdateDatabaseUser(database.Spec.Username, database.Spec.Password, database.Spec.Database)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	err = db.Close()

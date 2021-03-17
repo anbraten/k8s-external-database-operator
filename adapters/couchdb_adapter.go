@@ -11,20 +11,33 @@ type couchdbAdapter struct {
 	db            *couchdb.Server
 }
 
-func (adapter couchdbAdapter) CreateDatabase(name string) error {
-	_, err := adapter.db.Create(name)
+func (adapter couchdbAdapter) HasDatabase(database string) (error, bool) {
+	return nil, false
+}
+
+func (adapter couchdbAdapter) CreateDatabase(database string) error {
+	// TODO create if not exists
+	_, err := adapter.db.Create(database)
 	return err
 }
 
-func (adapter couchdbAdapter) DeleteDatabase(name string) error {
-	return adapter.db.Delete(name)
+func (adapter couchdbAdapter) DeleteDatabase(database string) error {
+	// TODO delete if exists
+	return adapter.db.Delete(database)
 }
 
-func (adapter couchdbAdapter) UpdateDatabaseUser(username string, password string) error {
+func (adapter couchdbAdapter) HasDatabaseUserWithAccess(username string, database string) (error, bool) {
+	// TODO implement
+	return nil, false
+}
+
+func (adapter couchdbAdapter) UpdateDatabaseUser(database string, username string, password string) error {
+	// TODO implement
 	return nil
 }
 
 func (adapter couchdbAdapter) Close() error {
+	// TODO implement
 	return nil
 }
 

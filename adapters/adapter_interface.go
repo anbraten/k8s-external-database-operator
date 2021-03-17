@@ -3,9 +3,11 @@ package adapters
 import "errors"
 
 type DatabaseAdapter interface {
-	CreateDatabase(name string) error
-	DeleteDatabase(name string) error
-	UpdateDatabaseUser(username string, password string) error
+	HasDatabase(database string) (error, bool)
+	CreateDatabase(database string) error
+	DeleteDatabase(database string) error
+	HasDatabaseUserWithAccess(username string, database string) (error, bool)
+	UpdateDatabaseUser(username string, password string, database string) error
 	Close() error
 }
 
@@ -14,7 +16,7 @@ func CreateConnection(databaseType string, host string, adminUsername string, ad
 		return createMysql(host, adminUsername, adminPassword)
 	}
 
-	if databaseType == "mysql" {
+	if databaseType == "couchdb" {
 		return createCouchdb(host, adminUsername, adminPassword)
 	}
 

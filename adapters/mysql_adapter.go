@@ -14,6 +14,10 @@ type mysqlAdapter struct {
 	db            *sql.DB
 }
 
+func (adapter couchdbAdapter) HasDatabase(database string) (error, bool) {
+	return nil, false
+}
+
 func (adapter mysqlAdapter) CreateDatabase(name string) error {
 	_, err := adapter.db.Exec("CREATE DATABASE IF NOT EXISTS $1;", name)
 	return err
@@ -24,7 +28,12 @@ func (adapter mysqlAdapter) DeleteDatabase(name string) error {
 	return err
 }
 
-func (adapter mysqlAdapter) UpdateDatabaseUser(username string, password string) error {
+func (adapter couchdbAdapter) HasDatabaseUserWithAccess(username string, database string) (error, bool) {
+	// TODO implement
+	return nil, false
+}
+
+func (adapter mysqlAdapter) UpdateDatabaseUser(username string, password string, database string) error {
 	// TODO implement
 	return nil
 }
