@@ -20,6 +20,8 @@ spec:
   password: iwonttellyou
 ```
 
+> Important note: :rotating_light: Database types can not be updated! Updating the user credentials normally results in recreation of the complete user which could delete your custom changes.
+
 ## Supported database types
 - mysql
 - couchdb
@@ -29,4 +31,4 @@ spec:
 ## Installation
 ### Requirements
 
-## 
+##
