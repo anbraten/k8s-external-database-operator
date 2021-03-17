@@ -18,18 +18,17 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"os"
 
 	"github.com/go-logr/logr"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/anbraten/k8s-external-database-operator/adapters"
-	rzabdev1 "github.com/anbraten/k8s-external-database-operator/api/v1"
+	adapters "github.com/anbraten/k8s-external-database-operator/adapters"
+	anbratengithubiov1alpha1 "github.com/anbraten/k8s-external-database-operator/api/v1alpha1"
 )
 
 // DatabaseReconciler reconciles a Database object
@@ -39,23 +38,25 @@ type DatabaseReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-const databaseFinalizer = "finalizer.database.rzab.de"
+const databaseFinalizer = "finalizer.database.anbraten.github.io"
 
-// +kubebuilder:rbac:groups=rzab.de,resources=databases,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=rzab.de,resources=databases/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=rzab.de,resources=databases/finalizers,verbs=update
+//+kubebuilder:rbac:groups=anbraten.github.io,resources=databases,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=anbraten.github.io,resources=databases/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=anbraten.github.io,resources=databases/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
 func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("database", req.NamespacedName)
 
 	// Fetch the Database instance
-	database := &rzabdev1.Database{}
+	database := &anbratengithubiov1alpha1.Database{}
 	err := r.Get(ctx, req.NamespacedName, database)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
+		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -141,10 +142,10 @@ func (r *DatabaseReconciler) getDatabaseConnection(databaseType string) (adapter
 		return adapters.CreateConnection("couchdb", couchdbURL, couchdbAdminUsername, couchdbAdminPassword)
 	}
 
-	return nil, errors.New("Database type not supported")
+	return nil, errors.NewBadRequest("Database type not supported")
 }
 
-func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, database *rzabdev1.Database) error {
+func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, database *anbratengithubiov1alpha1.Database) error {
 	db, err := r.getDatabaseConnection(database.Spec.Type)
 	if err != nil {
 		return err
@@ -164,7 +165,7 @@ func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, database *rzabdev
 	return nil
 }
 
-func (r *DatabaseReconciler) addFinalizer(log logr.Logger, m *rzabdev1.Database) error {
+func (r *DatabaseReconciler) addFinalizer(log logr.Logger, m *anbratengithubiov1alpha1.Database) error {
 	log.Info("Adding Finalizer for the database")
 	controllerutil.AddFinalizer(m, databaseFinalizer)
 
@@ -189,6 +190,6 @@ func contains(list []string, s string) bool {
 // SetupWithManager sets up the controller with the Manager.
 func (r *DatabaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&rzabdev1.Database{}).
+		For(&anbratengithubiov1alpha1.Database{}).
 		Complete(r)
 }

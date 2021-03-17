@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: databases.rzab.de
+  name: databases.anbraten.github.io
 spec:
-  group: rzab.de
+  group: anbraten.github.io
   names:
     kind: Database
     listKind: DatabaseList
@@ -16,7 +16,7 @@ spec:
     singular: database
   scope: Namespaced
   versions:
-  - name: v1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Database is the Schema for the databases API
@@ -43,7 +43,8 @@ spec:
                 description: Password of the databaser user
                 type: string
               type:
-                description: 'Type of the database. (currently supported: mysql)'
+                description: 'Type of the database. (currently supported: mysql, couchdb,
+                  mongo, postgres)'
                 type: string
               username:
                 description: Username of the database user which will have full access
@@ -52,6 +53,12 @@ spec:
             type: object
           status:
             description: DatabaseStatus defines the observed state of Database
+            properties:
+              created:
+                description: Has database been created?
+                type: boolean
+            required:
+            - created
             type: object
         type: object
     served: true

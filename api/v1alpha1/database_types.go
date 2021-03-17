@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,22 +27,25 @@ import (
 type DatabaseSpec struct {
 	// Type of the database. (currently supported: mysql, couchdb, mongo, postgres)
 	Type string `json:"type,omitempty"`
+
 	// Name of the database
 	Database string `json:"database,omitempty"`
+
 	// Username of the database user which will have full access to this database
 	Username string `json:"username,omitempty"`
+
 	// Password of the databaser user
 	Password string `json:"passord,omitempty"`
 }
 
 // DatabaseStatus defines the observed state of Database
 type DatabaseStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Has database been created?
+	Created bool `json:"created"`
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // Database is the Schema for the databases API
 type Database struct {
@@ -53,7 +56,7 @@ type Database struct {
 	Status DatabaseStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // DatabaseList contains a list of Database
 type DatabaseList struct {

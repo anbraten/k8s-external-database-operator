@@ -7,7 +7,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - rzab.de
+  - anbraten.github.io
   resources:
   - databases
   verbs:
@@ -19,13 +19,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - rzab.de
+  - anbraten.github.io
   resources:
   - databases/finalizers
   verbs:
   - update
 - apiGroups:
-  - rzab.de
+  - anbraten.github.io
   resources:
   - databases/status
   verbs:

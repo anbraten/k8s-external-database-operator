@@ -31,9 +31,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	rzabdev1 "github.com/anbraten/k8s-external-database-operator/api/v1"
+	anbratengithubiov1alpha1 "github.com/anbraten/k8s-external-database-operator/api/v1alpha1"
 	"github.com/anbraten/k8s-external-database-operator/controllers"
-	// +kubebuilder:scaffold:imports
+	//+kubebuilder:scaffold:imports
 )
 
 var (
@@ -44,8 +44,8 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(rzabdev1.AddToScheme(scheme))
-	// +kubebuilder:scaffold:scheme
+	utilruntime.Must(anbratengithubiov1alpha1.AddToScheme(scheme))
+	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
@@ -71,7 +71,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "e98fe865.rzab.de",
+		LeaderElectionID:       "e98fe865.anbraten.github.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -86,13 +86,13 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Database")
 		os.Exit(1)
 	}
-	// +kubebuilder:scaffold:builder
+	//+kubebuilder:scaffold:builder
 
-	if err := mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
-	if err := mgr.AddReadyzCheck("check", healthz.Ping); err != nil {
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}

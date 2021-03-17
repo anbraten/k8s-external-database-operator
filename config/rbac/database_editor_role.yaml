@@ -5,7 +5,7 @@ metadata:
   name: database-editor-role
 rules:
 - apiGroups:
-  - rzab.de
+  - anbraten.github.io
   resources:
   - databases
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - rzab.de
+  - anbraten.github.io
   resources:
   - databases/status
   verbs:

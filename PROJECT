@@ -1,12 +1,17 @@
-domain: rzab.de
+domain: anbraten.github.io
 layout: go.kubebuilder.io/v3
-projectName: k8s-external-database-operator
-repo: github.com/anbraten/k8s-external-database-operator
-resources:
-- crdVersion: v1
-  kind: Database
-  version: v1
-version: 3-alpha
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
+projectName: k8s-external-database-operator
+repo: github.com/anbraten/k8s-external-database-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: anbraten.github.io
+  kind: Database
+  path: github.com/anbraten/k8s-external-database-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

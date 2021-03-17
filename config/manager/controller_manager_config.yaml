@@ -8,4 +8,4 @@ webhook:
   port: 9443
 leaderElection:
   leaderElect: true
-  resourceName: e98fe865.rzab.de
+  resourceName: e98fe865.anbraten.github.io
