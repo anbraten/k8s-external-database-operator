@@ -11,8 +11,8 @@ type couchdbAdapter struct {
 	db            *couchdb.Server
 }
 
-func (adapter couchdbAdapter) HasDatabase(database string) (error, bool) {
-	return nil, false
+func (adapter couchdbAdapter) HasDatabase(database string) (bool, error) {
+	return false, nil
 }
 
 func (adapter couchdbAdapter) CreateDatabase(database string) error {
@@ -26,9 +26,9 @@ func (adapter couchdbAdapter) DeleteDatabase(database string) error {
 	return adapter.db.Delete(database)
 }
 
-func (adapter couchdbAdapter) HasDatabaseUserWithAccess(username string, database string) (error, bool) {
+func (adapter couchdbAdapter) HasDatabaseUserWithAccess(username string, database string) (bool, error) {
 	// TODO implement
-	return nil, false
+	return false, nil
 }
 
 func (adapter couchdbAdapter) UpdateDatabaseUser(database string, username string, password string) error {

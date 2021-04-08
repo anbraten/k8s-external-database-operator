@@ -3,10 +3,10 @@ package adapters
 import "errors"
 
 type DatabaseAdapter interface {
-	HasDatabase(database string) (error, bool)
+	HasDatabase(database string) (bool, error)
 	CreateDatabase(database string) error
 	DeleteDatabase(database string) error
-	HasDatabaseUserWithAccess(username string, database string) (error, bool)
+	HasDatabaseUserWithAccess(username string, database string) (bool, error)
 	UpdateDatabaseUser(username string, password string, database string) error
 	Close() error
 }
@@ -20,5 +20,9 @@ func CreateConnection(databaseType string, host string, adminUsername string, ad
 		return createCouchdb(host, adminUsername, adminPassword)
 	}
 
-	return nil, errors.New("Can't find database adapter")
+	if databaseType == "mongo" {
+		return createMongo(host, adminUsername, adminPassword)
+	}
+
+	return nil, errors.New("can't find database adapter")
 }
