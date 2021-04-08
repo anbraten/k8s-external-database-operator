@@ -31,7 +31,7 @@ jobs:
 
       - name: Run Makefile
         env:
-          VERSION: ${GITHUB_REF##*/}
+          VERSION: ${GITHUB_REF#refs/*/}
         run: |
           make build
           make docker-build
