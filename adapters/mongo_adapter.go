@@ -9,14 +9,16 @@ import (
 )
 
 type mongoAdapter struct {
-	host          string
-	adminUsername string
-	adminPassword string
-	client        *mongo.Client
+	client  *mongo.Client
+	context context.Context
+}
+
+type MongoAdapterConfig struct {
+	url string
 }
 
 func (adapter mongoAdapter) HasDatabase(database string) (bool, error) {
-	databaseNames, err := adapter.client.ListDatabaseNames(context.TODO(), bson.D{{"empty", false}})
+	databaseNames, err := adapter.client.ListDatabaseNames(adapter.context, bson.D{{"empty", false}})
 
 	if err != nil {
 		return false, err
@@ -31,7 +33,7 @@ func (adapter mongoAdapter) CreateDatabase(name string) error {
 }
 
 func (adapter mongoAdapter) DeleteDatabase(name string) error {
-	return adapter.client.Database(name).Drop(context.TODO())
+	return adapter.client.Database(name).Drop(adapter.context)
 }
 
 func (adapter mongoAdapter) HasDatabaseUserWithAccess(username string, database string) (bool, error) {
@@ -40,8 +42,12 @@ func (adapter mongoAdapter) HasDatabaseUserWithAccess(username string, database 
 }
 
 func (adapter mongoAdapter) UpdateDatabaseUser(username string, password string, database string) error {
-	r := adapter.client.Database(database).RunCommand(context.Background(), bson.D{{"createUser", username},
-		{"pwd", password}, {"roles", []bson.M{{"role": "dbAdmin", "db": database}}}})
+	r := adapter.client.Database(database).RunCommand(
+		adapter.context,
+		bson.D{
+			{"createUser", username},
+			{"pwd", password},
+			{"roles", []bson.M{{"role": "dbAdmin", "db": database}}}})
 
 	if r.Err() != nil {
 		return r.Err()
@@ -54,8 +60,8 @@ func (adapter mongoAdapter) Close() error {
 	return adapter.client.Disconnect(context.TODO())
 }
 
-func createMongo(host string, adminUsername string, adminPassword string) (*mongoAdapter, error) {
-	clientOpts := options.Client().ApplyURI("mongodb://" + adminUsername + ":" + adminPassword + "@" + host + ":27017")
+func GetMongoConnection(url string) (*mongoAdapter, error) {
+	clientOpts := options.Client().ApplyURI(url)
 	client, err := mongo.Connect(context.TODO(), clientOpts)
 
 	if err != nil {
@@ -63,10 +69,8 @@ func createMongo(host string, adminUsername string, adminPassword string) (*mong
 	}
 
 	adapter := mongoAdapter{
-		host:          host,
-		client:        client,
-		adminUsername: adminUsername,
-		adminPassword: adminPassword,
+		client:  client,
+		context: context.Background(),
 	}
 
 	return &adapter, nil

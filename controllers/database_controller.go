@@ -145,7 +145,7 @@ func (r *DatabaseReconciler) getDatabaseConnection(databaseType string) (adapter
 			return nil, errors.NewBadRequest("Mysql database not configured (provide: MYSQL_HOST, MYSQL_ADMIN_USERNAME, MYSQL_ADMIN_PASSWORD)")
 		}
 
-		return adapters.CreateConnection("mysql", mysqlHost, mysqlAdminUsername, mysqlAdminPassword)
+		return adapters.GetMysqlConnection(mysqlHost, mysqlAdminUsername, mysqlAdminPassword)
 	}
 
 	if databaseType == "couchdb" {
@@ -157,7 +157,17 @@ func (r *DatabaseReconciler) getDatabaseConnection(databaseType string) (adapter
 			return nil, errors.NewBadRequest("Couchdb database not configured (provide: COUCHDB_URL, COUCHDB_ADMIN_USERNAME, COUCHDB_ADMIN_PASSWORD)")
 		}
 
-		return adapters.CreateConnection("couchdb", couchdbURL, couchdbAdminUsername, couchdbAdminPassword)
+		return adapters.GetCouchdbConnection(couchdbURL, couchdbAdminUsername, couchdbAdminPassword)
+	}
+
+	if databaseType == "mongo" {
+		mongoURL := os.Getenv("MONGO_URL")
+
+		if mongoURL == "" {
+			return nil, errors.NewBadRequest("Couchdb database not configured (provide: MONGO_URL)")
+		}
+
+		return adapters.GetMongoConnection(mongoURL)
 	}
 
 	return nil, errors.NewBadRequest("Database type not supported")

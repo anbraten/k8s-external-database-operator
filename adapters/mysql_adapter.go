@@ -8,10 +8,7 @@ import (
 )
 
 type mysqlAdapter struct {
-	host          string
-	adminUsername string
-	adminPassword string
-	db            *sql.DB
+	db *sql.DB
 }
 
 func (adapter mysqlAdapter) HasDatabase(database string) (bool, error) {
@@ -42,17 +39,14 @@ func (adapter mysqlAdapter) Close() error {
 	return adapter.db.Close()
 }
 
-func createMysql(host string, adminUsername string, adminPassword string) (*mysqlAdapter, error) {
+func GetMysqlConnection(host string, adminUsername string, adminPassword string) (*mysqlAdapter, error) {
 	db, err := sql.Open("mysql", adminUsername+":"+adminPassword+"@"+host)
 	if err != nil {
 		return nil, err
 	}
 
 	adapter := mysqlAdapter{
-		host:          host,
-		db:            db,
-		adminUsername: adminUsername,
-		adminPassword: adminPassword,
+		db: db,
 	}
 
 	return &adapter, nil

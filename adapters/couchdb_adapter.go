@@ -5,10 +5,7 @@ import (
 )
 
 type couchdbAdapter struct {
-	url           string
-	adminUsername string
-	adminPassword string
-	db            *couchdb.Server
+	db *couchdb.Server
 }
 
 func (adapter couchdbAdapter) HasDatabase(database string) (bool, error) {
@@ -41,7 +38,7 @@ func (adapter couchdbAdapter) Close() error {
 	return nil
 }
 
-func createCouchdb(url string, adminUsername string, adminPassword string) (*couchdbAdapter, error) {
+func GetCouchdbConnection(url string, adminUsername string, adminPassword string) (*couchdbAdapter, error) {
 	server, err := couchdb.NewServer(url)
 	if err != nil {
 		return nil, err
@@ -53,10 +50,7 @@ func createCouchdb(url string, adminUsername string, adminPassword string) (*cou
 	}
 
 	adapter := couchdbAdapter{
-		url:           url,
-		db:            server,
-		adminUsername: adminUsername,
-		adminPassword: adminPassword,
+		db: server,
 	}
 
 	return &adapter, nil
