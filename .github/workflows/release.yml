@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    branches:
-    - master
+    tags:
+      - "*"
 
 jobs:
   build:
@@ -11,6 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - uses: actions/setup-go@v2
         with:
@@ -23,6 +30,8 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: Run Makefile
+        env:
+          VERSION: ${GITHUB_REF##*/}
         run: |
           make build
           make docker-build
