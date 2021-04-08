@@ -13,12 +13,8 @@ type mongoAdapter struct {
 	context context.Context
 }
 
-type MongoAdapterConfig struct {
-	url string
-}
-
 func (adapter mongoAdapter) HasDatabase(database string) (bool, error) {
-	databaseNames, err := adapter.client.ListDatabaseNames(adapter.context, bson.D{{"empty", false}})
+	databaseNames, err := adapter.client.ListDatabaseNames(adapter.context, bson.D{{Key: "empty", Value: false}})
 
 	if err != nil {
 		return false, err
@@ -45,9 +41,9 @@ func (adapter mongoAdapter) UpdateDatabaseUser(username string, password string,
 	r := adapter.client.Database(database).RunCommand(
 		adapter.context,
 		bson.D{
-			{"createUser", username},
-			{"pwd", password},
-			{"roles", []bson.M{{"role": "dbAdmin", "db": database}}}})
+			{Key: "createUser", Value: username},
+			{Key: "pwd", Value: password},
+			{Key: "roles", Value: []bson.M{{"role": "dbAdmin", "db": database}}}})
 
 	if r.Err() != nil {
 		return r.Err()

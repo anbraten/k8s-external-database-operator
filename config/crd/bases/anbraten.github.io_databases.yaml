@@ -39,7 +39,7 @@ spec:
               database:
                 description: Name of the database
                 type: string
-              passord:
+              password:
                 description: Password of the databaser user
                 type: string
               type:

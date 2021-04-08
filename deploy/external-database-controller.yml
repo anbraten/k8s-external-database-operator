@@ -40,7 +40,7 @@ spec:
               database:
                 description: Name of the database
                 type: string
-              passord:
+              password:
                 description: Password of the databaser user
                 type: string
               type:
@@ -274,7 +274,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: anbraten/external-database-operator:0.0.1
+        image: anbraten/external-database-operator:0.0.2
         livenessProbe:
           httpGet:
             path: /healthz
@@ -297,19 +297,21 @@ spec:
             memory: 20Mi
         securityContext:
           allowPrivilegeEscalation: false
-      env:
-      - name: MYSQL_HOST
-        value: 127.0.0.1
-      - name: MYSQL_ADMIN_USERNAME
-        value: admin
-      - name: MYSQL_ADMIN_PASSWORD
-        value: ""
-      - name: COUCHDB_URL
-        value: http://127.0.0.1
-      - name: COUCHDB_ADMIN_USERNAME
-        value: admin
-      - name: COUCHDB_ADMIN_PASSWORD
-        value: ""
+        env:
+        - name: MYSQL_HOST
+          value: ""
+        - name: MYSQL_ADMIN_USERNAME
+          value: ""
+        - name: MYSQL_ADMIN_PASSWORD
+          value: ""
+        - name: COUCHDB_URL
+          value: ""
+        - name: COUCHDB_ADMIN_USERNAME
+          value: ""
+        - name: COUCHDB_ADMIN_PASSWORD
+          value: ""
+        - name: MONGO_URL
+          value: ""
       securityContext:
         runAsNonRoot: true
       serviceAccountName: external-database-operator-controller-manager

@@ -35,7 +35,7 @@ type DatabaseSpec struct {
 	Username string `json:"username,omitempty"`
 
 	// Password of the databaser user
-	Password string `json:"passord,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 // DatabaseStatus defines the observed state of Database
