@@ -1,0 +1,29 @@
+name: Release
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  build:
+    name: Build new docker image and push it to DockerHub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.16.1'
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Run Makefile
+        run: |
+          make build
+          make docker-build
+          make docker-push
