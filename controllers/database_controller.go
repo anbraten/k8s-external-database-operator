@@ -75,7 +75,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	log.Info("Connected to database server")
 
-	err, hasDatabase := db.HasDatabase(database.Spec.Database)
+	hasDatabase, err := db.HasDatabase(database.Spec.Database)
 	if !hasDatabase {
 		log.Info("Create new database: '" + database.Spec.Database + "'")
 
@@ -85,7 +85,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	err, hasDatabaseUserWithAccess := db.HasDatabaseUserWithAccess(database.Spec.Username, database.Spec.Database)
+	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(database.Spec.Username, database.Spec.Database)
 	if !hasDatabaseUserWithAccess {
 		log.Info("Create new user '" + database.Spec.Username + "' with access to the database '" + database.Spec.Database + "'")
 
