@@ -148,7 +148,7 @@ func (r *DatabaseReconciler) getDatabaseConnection(databaseType string) (adapter
 		mongoURL := os.Getenv("MONGO_URL")
 
 		if mongoURL == "" {
-			return nil, errors.NewBadRequest("Couchdb database not configured (provide: MONGO_URL)")
+			return nil, errors.NewBadRequest("Mongo database not configured (provide: MONGO_URL)")
 		}
 
 		return adapters.GetMongoConnection(mongoURL)
