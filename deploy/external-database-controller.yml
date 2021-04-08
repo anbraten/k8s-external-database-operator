@@ -268,6 +268,10 @@ spec:
         ports:
         - containerPort: 8443
           name: https
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
       - args:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
@@ -299,19 +303,40 @@ spec:
           allowPrivilegeEscalation: false
         env:
         - name: MYSQL_HOST
-          value: ""
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: mysqlHost
         - name: MYSQL_ADMIN_USERNAME
-          value: ""
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: mysqlAdminUsername
         - name: MYSQL_ADMIN_PASSWORD
-          value: ""
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: mysqlAdminPassword
         - name: COUCHDB_URL
-          value: ""
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: couchdbUrl
         - name: COUCHDB_ADMIN_USERNAME
-          value: ""
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: couchdbAdminUsername
         - name: COUCHDB_ADMIN_PASSWORD
-          value: ""
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: couchdbAdminPassword
         - name: MONGO_URL
-          value: ""
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: mongoUrl
       securityContext:
         runAsNonRoot: true
       serviceAccountName: external-database-operator-controller-manager
