@@ -1,0 +1,9 @@
+apiVersion: anbraten.github.io/v1alpha1
+kind: Database
+metadata:
+  name: guestbook-database
+spec:
+  type: mongo
+  database: guestbook
+  username: guestbook-admin
+  password: iwonttellyou
