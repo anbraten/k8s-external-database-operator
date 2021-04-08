@@ -30,9 +30,8 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: Run Makefile
-        env:
-          VERSION: ${GITHUB_REF#refs/*/}
         run: |
+          export VERSION=${GITHUB_REF#refs/*/}
           make build
           make docker-build
           make docker-push
