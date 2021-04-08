@@ -44,7 +44,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			log.Info("Database resource not found. Ignoring since object must be deleted")
+			// log.Info("Database resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -60,6 +60,10 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	log.Info("Connected to database server")
 
 	hasDatabase, err := db.HasDatabase(database.Spec.Database)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if !hasDatabase {
 		log.Info("Create new database: '" + database.Spec.Database + "'")
 
@@ -70,10 +74,14 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(database.Spec.Username, database.Spec.Database)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if !hasDatabaseUserWithAccess {
 		log.Info("Create new user '" + database.Spec.Username + "' with access to the database '" + database.Spec.Database + "'")
 
-		err = db.UpdateDatabaseUser(database.Spec.Username, database.Spec.Password, database.Spec.Database)
+		err = db.CreateDatabaseUser(database.Spec.Username, database.Spec.Password, database.Spec.Database)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -163,6 +171,34 @@ func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, database *anbrate
 		return err
 	}
 
+	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(database.Spec.Username, database.Spec.Database)
+	if err != nil {
+		return err
+	}
+
+	if hasDatabaseUserWithAccess {
+		log.Info("Remove user '" + database.Spec.Username + "' and its access to the database '" + database.Spec.Database + "'")
+
+		err = db.DeleteDatabaseUser(database.Spec.Username, database.Spec.Database)
+		if err != nil {
+			return err
+		}
+	}
+
+	hasDatabase, err := db.HasDatabase(database.Spec.Database)
+	if err != nil {
+		return err
+	}
+
+	if hasDatabase {
+		log.Info("Remove database: '" + database.Spec.Database + "'")
+
+		err = db.DeleteDatabase(database.Spec.Database)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = db.DeleteDatabase(database.Spec.Database)
 	if err != nil {
 		return err
@@ -173,7 +209,7 @@ func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, database *anbrate
 		return err
 	}
 
-	log.Info("Successfully removed database: '" + database.Spec.Database + "'")
+	log.Info("Database: '" + database.Spec.Database + "' and user: '" + database.Spec.Username + "' removed")
 	return nil
 }
 

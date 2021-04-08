@@ -28,7 +28,12 @@ func (adapter couchdbAdapter) HasDatabaseUserWithAccess(username string, databas
 	return false, nil
 }
 
-func (adapter couchdbAdapter) UpdateDatabaseUser(database string, username string, password string) error {
+func (adapter couchdbAdapter) CreateDatabaseUser(database string, username string, password string) error {
+	// TODO implement
+	return nil
+}
+
+func (adapter couchdbAdapter) DeleteDatabaseUser(database string, username string) error {
 	// TODO implement
 	return nil
 }

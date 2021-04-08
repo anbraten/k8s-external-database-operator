@@ -30,7 +30,12 @@ func (adapter mysqlAdapter) HasDatabaseUserWithAccess(username string, database 
 	return false, nil
 }
 
-func (adapter mysqlAdapter) UpdateDatabaseUser(username string, password string, database string) error {
+func (adapter mysqlAdapter) CreateDatabaseUser(username string, password string, database string) error {
+	// TODO implement
+	return nil
+}
+
+func (adapter mysqlAdapter) DeleteDatabaseUser(database string, username string) error {
 	// TODO implement
 	return nil
 }

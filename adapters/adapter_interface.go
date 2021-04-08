@@ -5,6 +5,7 @@ type DatabaseAdapter interface {
 	CreateDatabase(database string) error
 	DeleteDatabase(database string) error
 	HasDatabaseUserWithAccess(username string, database string) (bool, error)
-	UpdateDatabaseUser(username string, password string, database string) error
+	CreateDatabaseUser(username string, password string, database string) error
+	DeleteDatabaseUser(username string, database string) error
 	Close() error
 }
