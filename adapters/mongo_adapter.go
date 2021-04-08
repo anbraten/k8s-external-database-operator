@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -33,8 +34,25 @@ func (adapter mongoAdapter) DeleteDatabase(name string) error {
 }
 
 func (adapter mongoAdapter) HasDatabaseUserWithAccess(username string, database string) (bool, error) {
-	// TODO implement
-	return false, nil
+	var result bson.Raw
+
+	command := bson.D{{Key: "usersInfo", Value: bson.M{"user": username, "db": database}}}
+	err := adapter.client.Database("admin").RunCommand(adapter.context, command).Decode(&result)
+	if err != nil {
+		return false, err
+	}
+
+	usersArr, ok := result.Lookup("users").ArrayOK()
+	if !ok {
+		return false, errors.New("cant find users array in result")
+	}
+
+	users, err := usersArr.Elements()
+	if err != nil {
+		return false, err
+	}
+
+	return len(users) == 1, nil
 }
 
 func (adapter mongoAdapter) UpdateDatabaseUser(username string, password string, database string) error {
@@ -53,12 +71,14 @@ func (adapter mongoAdapter) UpdateDatabaseUser(username string, password string,
 }
 
 func (adapter mongoAdapter) Close() error {
-	return adapter.client.Disconnect(context.TODO())
+	return adapter.client.Disconnect(adapter.context)
 }
 
 func GetMongoConnection(url string) (*mongoAdapter, error) {
+
+	context := context.Background()
 	clientOpts := options.Client().ApplyURI(url)
-	client, err := mongo.Connect(context.TODO(), clientOpts)
+	client, err := mongo.Connect(context, clientOpts)
 
 	if err != nil {
 		return nil, err
@@ -66,7 +86,7 @@ func GetMongoConnection(url string) (*mongoAdapter, error) {
 
 	adapter := mongoAdapter{
 		client:  client,
-		context: context.Background(),
+		context: context,
 	}
 
 	return &adapter, nil
