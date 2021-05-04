@@ -61,7 +61,7 @@ func (adapter mongoAdapter) CreateDatabaseUser(username string, password string,
 		bson.D{
 			{Key: "createUser", Value: username},
 			{Key: "pwd", Value: password},
-			{Key: "roles", Value: []bson.M{{"role": "dbAdmin", "db": database}}}})
+			{Key: "roles", Value: []bson.M{{"role": "dbOwner", "db": database}}}})
 
 	if r.Err() != nil {
 		return r.Err()
