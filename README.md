@@ -26,7 +26,7 @@ spec:
 
 - mongo :white_check_mark:
 - mysql :hammer:
-- couchdb :hammer:
+- couchdb :white_check_mark:
 - postgres :clock1:
 
 ## Installation
