@@ -56,23 +56,16 @@ func (adapter mongoAdapter) HasDatabaseUserWithAccess(username string, database 
 }
 
 func (adapter mongoAdapter) CreateDatabaseUser(username string, password string, database string) error {
-	r := adapter.client.Database(database).RunCommand(
+	return adapter.client.Database(database).RunCommand(
 		adapter.context,
 		bson.D{
 			{Key: "createUser", Value: username},
 			{Key: "pwd", Value: password},
-			{Key: "roles", Value: []bson.M{{"role": "dbOwner", "db": database}}}})
-
-	if r.Err() != nil {
-		return r.Err()
-	}
-
-	return nil
+			{Key: "roles", Value: []bson.M{{"role": "dbAdmin", "db": database}}}}).Err()
 }
 
 func (adapter mongoAdapter) DeleteDatabaseUser(database string, username string) error {
-	// TODO implement
-	return nil
+	return adapter.client.Database(database).RunCommand(adapter.context, bson.D{{Key: "dropUser", Value: username}}).Err()
 }
 
 func (adapter mongoAdapter) Close() error {
