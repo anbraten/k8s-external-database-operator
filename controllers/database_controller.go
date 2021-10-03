@@ -57,6 +57,8 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
+	defer db.Close()
+
 	log.Info("Connected to database server")
 
 	hasDatabase, err := db.HasDatabase(database.Spec.Database)
@@ -85,11 +87,6 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-	}
-
-	err = db.Close()
-	if err != nil {
-		return ctrl.Result{}, err
 	}
 
 	log.Info("Created database and user with full access to it")
@@ -171,6 +168,8 @@ func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, database *anbrate
 		return err
 	}
 
+	defer db.Close()
+
 	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(database.Spec.Username, database.Spec.Database)
 	if err != nil {
 		return err
@@ -200,11 +199,6 @@ func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, database *anbrate
 	}
 
 	err = db.DeleteDatabase(database.Spec.Database)
-	if err != nil {
-		return err
-	}
-
-	err = db.Close()
 	if err != nil {
 		return err
 	}
