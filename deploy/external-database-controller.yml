@@ -278,7 +278,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: anbraten/external-database-operator:0.0.2
+        image: anbraten/external-database-operator:0.0.8
         livenessProbe:
           httpGet:
             path: /healthz
