@@ -11,19 +11,19 @@ func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdap
 	// given
 	var err error
 
-	defer func() {
-		if err := adapter.DeleteDatabase(ctx, "guestbook"); err != nil {
-			t.Fatalf("Error deleting database: %s", err)
+	t.Cleanup(func() {
+		if err = adapter.DeleteDatabaseUser(ctx, "guestbook", "guestbook-admin"); err != nil {
+			t.Errorf("Error deleting database user: %s", err)
 		}
 
-		if err = adapter.DeleteDatabaseUser(ctx, "guestbook", "guestbook-admin"); err != nil {
-			t.Fatalf("Error deleting database: %s", err)
+		if err := adapter.DeleteDatabase(ctx, "guestbook"); err != nil {
+			t.Errorf("Error deleting database: %s", err)
 		}
 
 		if err = adapter.Close(ctx); err != nil {
 			t.Fatalf("Error closing database connection: %s", err)
 		}
-	}()
+	})
 
 	// when
 	err = adapter.CreateDatabase(ctx, "guestbook")
@@ -35,12 +35,12 @@ func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdap
 		t.Fatalf("Error creating database user: %s", err)
 	}
 
-	// // then
-	res, err := adapter.HasDatabaseUserWithAccess(ctx, "guestbook-admin", "guestbook")
+	// then
+	res, err := adapter.HasDatabaseUserWithAccess(ctx, "guestbook", "guestbook-admin")
 	if err != nil {
 		t.Fatalf("Error creating database: %s", err)
 	}
-	if res {
+	if !res {
 		t.Fatalf("Database user does not exists")
 	}
 }

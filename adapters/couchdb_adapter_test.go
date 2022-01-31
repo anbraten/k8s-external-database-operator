@@ -2,6 +2,9 @@ package adapters_test
 
 import (
 	"context"
+	"testing"
+
+	"github.com/anbraten/k8s-external-database-operator/adapters"
 )
 
 func TestCouchDB(t *testing.T) {

@@ -31,7 +31,7 @@ func (adapter mongoAdapter) DeleteDatabase(ctx context.Context, name string) err
 	return adapter.client.Database(name).Drop(ctx)
 }
 
-func (adapter mongoAdapter) HasDatabaseUserWithAccess(ctx context.Context, username string, database string) (bool, error) {
+func (adapter mongoAdapter) HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error) {
 	var result bson.Raw
 
 	command := bson.D{{Key: "usersInfo", Value: bson.M{"user": username, "db": database}}}
@@ -53,7 +53,7 @@ func (adapter mongoAdapter) HasDatabaseUserWithAccess(ctx context.Context, usern
 	return len(users) == 1, nil
 }
 
-func (adapter mongoAdapter) CreateDatabaseUser(ctx context.Context, username string, password string, database string) error {
+func (adapter mongoAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
 	return adapter.client.Database(database).RunCommand(
 		ctx,
 		bson.D{

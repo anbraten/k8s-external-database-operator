@@ -28,7 +28,7 @@ func (adapter couchdbAdapter) DeleteDatabase(ctx context.Context, database strin
 	return adapter.db.DestroyDB(ctx, database)
 }
 
-func (adapter couchdbAdapter) HasDatabaseUserWithAccess(ctx context.Context, username string, database string) (bool, error) {
+func (adapter couchdbAdapter) HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error) {
 	sc, err := adapter.db.DB(database).Security(ctx)
 	if err != nil {
 		return false, err
@@ -44,11 +44,6 @@ func (adapter couchdbAdapter) HasDatabaseUserWithAccess(ctx context.Context, use
 }
 
 func (adapter couchdbAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
-	user := map[string]interface{}{
-		"_id":      kivik.UserPrefix + username,
-		"type":     username,
-		"password": password,
-	}
 
 	exists, err := adapter.db.DBExists(ctx, "_users")
 	if err != nil {
@@ -62,20 +57,26 @@ func (adapter couchdbAdapter) CreateDatabaseUser(ctx context.Context, database s
 		}
 	}
 
-	_, err = adapter.db.DB("_users").Put(ctx, kivik.UserPrefix+username, user)
+	_, err = adapter.db.DB("_users").Put(ctx, kivik.UserPrefix+username, map[string]interface{}{
+		"_id":      kivik.UserPrefix + username,
+		"name":     username,
+		"type":     "user",
+		"roles":    []string{},
+		"password": password,
+	})
 	if err != nil {
 		return err
 	}
 
-	userDB := adapter.db.DB("_users")
-	sc, err := userDB.Security(ctx)
+	db := adapter.db.DB(database)
+	sc, err := db.Security(ctx)
 	if err != nil {
 		return err
 	}
 
 	sc.Admins.Names = append(sc.Admins.Names, username)
 
-	return userDB.SetSecurity(ctx, sc)
+	return db.SetSecurity(ctx, sc)
 }
 
 func (adapter couchdbAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
@@ -86,7 +87,7 @@ func (adapter couchdbAdapter) DeleteDatabaseUser(ctx context.Context, database s
 }
 
 func (adapter couchdbAdapter) Close(ctx context.Context) error {
-	return adapter.Close(ctx)
+	return adapter.db.Close(ctx)
 }
 
 func GetCouchdbConnection(ctx context.Context, url string) (*couchdbAdapter, error) {
