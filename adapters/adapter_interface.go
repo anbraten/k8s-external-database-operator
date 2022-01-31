@@ -1,11 +1,13 @@
 package adapters
 
+import "context"
+
 type DatabaseAdapter interface {
-	HasDatabase(database string) (bool, error)
-	CreateDatabase(database string) error
-	DeleteDatabase(database string) error
-	HasDatabaseUserWithAccess(username string, database string) (bool, error)
-	CreateDatabaseUser(username string, password string, database string) error
-	DeleteDatabaseUser(username string, database string) error
-	Close() error
+	HasDatabase(ctx context.Context, database string) (bool, error)
+	CreateDatabase(ctx context.Context, database string) error
+	DeleteDatabase(ctx context.Context, database string) error
+	HasDatabaseUserWithAccess(ctx context.Context, username string, database string) (bool, error)
+	CreateDatabaseUser(ctx context.Context, username string, password string, database string) error
+	DeleteDatabaseUser(ctx context.Context, username string, database string) error
+	Close(ctx context.Context) error
 }

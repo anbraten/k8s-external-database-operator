@@ -52,16 +52,16 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	db, err := r.getDatabaseConnection(database.Spec.Type)
+	db, err := r.getDatabaseConnection(ctx, database.Spec.Type)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	defer db.Close()
+	defer db.Close(ctx)
 
 	log.Info("Connected to database server")
 
-	hasDatabase, err := db.HasDatabase(database.Spec.Database)
+	hasDatabase, err := db.HasDatabase(ctx, database.Spec.Database)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -69,13 +69,13 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if !hasDatabase {
 		log.Info("Create new database: '" + database.Spec.Database + "'")
 
-		err = db.CreateDatabase(database.Spec.Database)
+		err = db.CreateDatabase(ctx, database.Spec.Database)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(database.Spec.Username, database.Spec.Database)
+	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(ctx, database.Spec.Username, database.Spec.Database)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -83,7 +83,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if !hasDatabaseUserWithAccess {
 		log.Info("Create new user '" + database.Spec.Username + "' with access to the database '" + database.Spec.Database + "'")
 
-		err = db.CreateDatabaseUser(database.Spec.Username, database.Spec.Password, database.Spec.Database)
+		err = db.CreateDatabaseUser(ctx, database.Spec.Username, database.Spec.Password, database.Spec.Database)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -99,7 +99,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			// Run finalization logic for databaseFinalizer. If the
 			// finalization logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
-			if err := r.finalizeDatabase(log, database); err != nil {
+			if err := r.finalizeDatabase(ctx, log, database); err != nil {
 				return ctrl.Result{}, err
 			}
 
@@ -124,7 +124,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
-func (r *DatabaseReconciler) getDatabaseConnection(databaseType string) (adapters.DatabaseAdapter, error) {
+func (r *DatabaseReconciler) getDatabaseConnection(ctx context.Context, databaseType string) (adapters.DatabaseAdapter, error) {
 	if databaseType == "mysql" {
 		mysqlHost := os.Getenv("MYSQL_HOST")
 		mysqlAdminUsername := os.Getenv("MYSQL_ADMIN_USERNAME")
@@ -134,19 +134,17 @@ func (r *DatabaseReconciler) getDatabaseConnection(databaseType string) (adapter
 			return nil, errors.NewBadRequest("Mysql database not configured (provide: MYSQL_HOST, MYSQL_ADMIN_USERNAME, MYSQL_ADMIN_PASSWORD)")
 		}
 
-		return adapters.GetMysqlConnection(mysqlHost, mysqlAdminUsername, mysqlAdminPassword)
+		return adapters.GetMysqlConnection(ctx, mysqlHost, mysqlAdminUsername, mysqlAdminPassword)
 	}
 
 	if databaseType == "couchdb" {
 		couchdbURL := os.Getenv("COUCHDB_URL")
-		couchdbAdminUsername := os.Getenv("COUCHDB_ADMIN_USERNAME")
-		couchdbAdminPassword := os.Getenv("COUCHDB_ADMIN_PASSWORD")
 
-		if couchdbURL == "" || couchdbAdminUsername == "" || couchdbAdminPassword == "" {
-			return nil, errors.NewBadRequest("Couchdb database not configured (provide: COUCHDB_URL, COUCHDB_ADMIN_USERNAME, COUCHDB_ADMIN_PASSWORD)")
+		if couchdbURL == "" {
+			return nil, errors.NewBadRequest("Couchdb database not configured (provide: COUCHDB_URL)")
 		}
 
-		return adapters.GetCouchdbConnection(couchdbURL, couchdbAdminUsername, couchdbAdminPassword)
+		return adapters.GetCouchdbConnection(ctx, couchdbURL)
 	}
 
 	if databaseType == "mongo" {
@@ -156,21 +154,21 @@ func (r *DatabaseReconciler) getDatabaseConnection(databaseType string) (adapter
 			return nil, errors.NewBadRequest("Mongo database not configured (provide: MONGO_URL)")
 		}
 
-		return adapters.GetMongoConnection(mongoURL)
+		return adapters.GetMongoConnection(ctx, mongoURL)
 	}
 
 	return nil, errors.NewBadRequest("Database type not supported")
 }
 
-func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, database *anbratengithubiov1alpha1.Database) error {
-	db, err := r.getDatabaseConnection(database.Spec.Type)
+func (r *DatabaseReconciler) finalizeDatabase(ctx context.Context, log logr.Logger, database *anbratengithubiov1alpha1.Database) error {
+	db, err := r.getDatabaseConnection(ctx, database.Spec.Type)
 	if err != nil {
 		return err
 	}
 
-	defer db.Close()
+	defer db.Close(ctx)
 
-	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(database.Spec.Username, database.Spec.Database)
+	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(ctx, database.Spec.Username, database.Spec.Database)
 	if err != nil {
 		return err
 	}
@@ -178,13 +176,13 @@ func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, database *anbrate
 	if hasDatabaseUserWithAccess {
 		log.Info("Remove user '" + database.Spec.Username + "' and its access to the database '" + database.Spec.Database + "'")
 
-		err = db.DeleteDatabaseUser(database.Spec.Username, database.Spec.Database)
+		err = db.DeleteDatabaseUser(ctx, database.Spec.Username, database.Spec.Database)
 		if err != nil {
 			return err
 		}
 	}
 
-	hasDatabase, err := db.HasDatabase(database.Spec.Database)
+	hasDatabase, err := db.HasDatabase(ctx, database.Spec.Database)
 	if err != nil {
 		return err
 	}
@@ -192,13 +190,13 @@ func (r *DatabaseReconciler) finalizeDatabase(log logr.Logger, database *anbrate
 	if hasDatabase {
 		log.Info("Remove database: '" + database.Spec.Database + "'")
 
-		err = db.DeleteDatabase(database.Spec.Database)
+		err = db.DeleteDatabase(ctx, database.Spec.Database)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = db.DeleteDatabase(database.Spec.Database)
+	err = db.DeleteDatabase(ctx, database.Spec.Database)
 	if err != nil {
 		return err
 	}

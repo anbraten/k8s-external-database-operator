@@ -1,59 +1,40 @@
 package adapters
 
 import (
-	"fmt"
+	"context"
 
-	"github.com/leesper/couchdb-golang"
+	_ "github.com/go-kivik/couchdb/v4" // The CouchDB driver
+	"github.com/go-kivik/kivik/v4"
 )
 
-type securityConfig struct{
+type securityConfig struct {
 	names []string
 	roles []string
 }
 
 type couchdbAdapter struct {
-	db *couchdb.Server
+	db *kivik.Client
 }
 
-func (adapter couchdbAdapter) HasDatabase(database string) (bool, error) {
-	return adapter.db.Contains(database), nil
+func (adapter couchdbAdapter) HasDatabase(ctx context.Context, database string) (bool, error) {
+	return adapter.db.DBExists(ctx, database)
 }
 
-func (adapter couchdbAdapter) CreateDatabase(database string) error {
-	_, err := adapter.db.Create(database)
-	return err
+func (adapter couchdbAdapter) CreateDatabase(ctx context.Context, database string) error {
+	return adapter.db.CreateDB(ctx, database)
 }
 
-func (adapter couchdbAdapter) DeleteDatabase(database string) error {
-	return adapter.db.Delete(database)
+func (adapter couchdbAdapter) DeleteDatabase(ctx context.Context, database string) error {
+	return adapter.db.DestroyDB(ctx, database)
 }
 
-func (adapter couchdbAdapter) getDatabaseAdmins(database string) ([]string, error) {
-	db, err := adapter.db.Get(database)
-	if err != nil {
-		return nil, err
-	}
-
-	sc, err := db.GetSecurity()
-	if err != nil {
-		return nil, err
-	}
-
-	admins, ok := sc["admins"].(securityConfig)
-	if !ok {
-		return nil, fmt.Errorf("can't find admin users in security context")
-	}
-
-	return admins.names, nil
-}
-
-func (adapter couchdbAdapter) HasDatabaseUserWithAccess(username string, database string) (bool, error) {
-	admins, err := adapter.getDatabaseAdmins(database)
+func (adapter couchdbAdapter) HasDatabaseUserWithAccess(ctx context.Context, username string, database string) (bool, error) {
+	sc, err := adapter.db.DB(database).Security(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	for _, name := range admins {
+	for _, name := range sc.Admins.Names {
 		if name == username {
 			return true, nil
 		}
@@ -62,53 +43,60 @@ func (adapter couchdbAdapter) HasDatabaseUserWithAccess(username string, databas
 	return false, nil
 }
 
-func (adapter couchdbAdapter) CreateDatabaseUser(database string, username string, password string) error {
-	adapter.db.AddUser(username, password, nil)
-	db, err := adapter.db.Get(database)
+func (adapter couchdbAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
+	user := map[string]interface{}{
+		"_id":      kivik.UserPrefix + username,
+		"type":     username,
+		"password": password,
+	}
+
+	exists, err := adapter.db.DBExists(ctx, "_users")
 	if err != nil {
 		return err
 	}
 
-	sc, err := db.GetSecurity()
+	if !exists {
+		err := adapter.db.CreateDB(ctx, "_users")
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = adapter.db.DB("_users").Put(ctx, kivik.UserPrefix+username, user)
 	if err != nil {
 		return err
 	}
 
-	admins, err := adapter.getDatabaseAdmins(database)
+	userDB := adapter.db.DB("_users")
+	sc, err := userDB.Security(ctx)
 	if err != nil {
 		return err
 	}
 
-	sc["admins"] = &securityConfig{
-		names: append(admins, username),
-		roles: nil,
-	}
+	sc.Admins.Names = append(sc.Admins.Names, username)
 
-	return db.SetSecurity(sc)
+	return userDB.SetSecurity(ctx, sc)
 }
 
-func (adapter couchdbAdapter) DeleteDatabaseUser(database string, username string) error {
-	return adapter.db.RemoveUser(username)
+func (adapter couchdbAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
+	userDB := adapter.db.DB("_users")
+	row := userDB.Get(ctx, kivik.UserPrefix+username)
+	_, err := userDB.Delete(ctx, kivik.UserPrefix+username, row.Rev())
+	return err
 }
 
-func (adapter couchdbAdapter) Close() error {
-	// couchdb is using single http calls and has no active connection we could close
-	return nil
+func (adapter couchdbAdapter) Close(ctx context.Context) error {
+	return adapter.Close(ctx)
 }
 
-func GetCouchdbConnection(url string, adminUsername string, adminPassword string) (*couchdbAdapter, error) {
-	server, err := couchdb.NewServer(url)
+func GetCouchdbConnection(ctx context.Context, url string) (*couchdbAdapter, error) {
+	client, err := kivik.New("couch", url)
 	if err != nil {
-		return nil, err
-	}
-
-	_, err = server.Login(adminUsername, adminPassword)
-	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	adapter := couchdbAdapter{
-		db: server,
+		db: client,
 	}
 
 	return &adapter, nil
