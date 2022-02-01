@@ -48,12 +48,13 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get Database")
+		log.Error(err, "Failed to get database resource")
 		return ctrl.Result{}, err
 	}
 
 	db, err := r.getDatabaseConnection(ctx, database.Spec.Type)
 	if err != nil {
+		log.Error(err, "Failed to detect and open database connection")
 		return ctrl.Result{}, err
 	}
 
@@ -63,6 +64,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	hasDatabase, err := db.HasDatabase(ctx, database.Spec.Database)
 	if err != nil {
+		log.Error(err, "Couldn't check if database exists")
 		return ctrl.Result{}, err
 	}
 
@@ -71,12 +73,14 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 		err = db.CreateDatabase(ctx, database.Spec.Database)
 		if err != nil {
+			log.Error(err, "Can't create database")
 			return ctrl.Result{}, err
 		}
 	}
 
 	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(ctx, database.Spec.Username, database.Spec.Database)
 	if err != nil {
+		log.Error(err, "Can't check if user has access to database")
 		return ctrl.Result{}, err
 	}
 
@@ -85,6 +89,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 		err = db.CreateDatabaseUser(ctx, database.Spec.Username, database.Spec.Password, database.Spec.Database)
 		if err != nil {
+			log.Error(err, "Can't create database user with access to database")
 			return ctrl.Result{}, err
 		}
 	}
@@ -100,6 +105,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			// finalization logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
 			if err := r.finalizeDatabase(ctx, log, database); err != nil {
+				log.Error(err, "Can't create finalizer for database")
 				return ctrl.Result{}, err
 			}
 
@@ -108,6 +114,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			controllerutil.RemoveFinalizer(database, databaseFinalizer)
 			err := r.Update(ctx, database)
 			if err != nil {
+				log.Error(err, "Can't remove finalizers of database")
 				return ctrl.Result{}, err
 			}
 		}
@@ -116,7 +123,8 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// Add finalizer for this CR
 	if !contains(database.GetFinalizers(), databaseFinalizer) {
-		if err := r.addFinalizer(log, database); err != nil {
+		if err := r.addFinalizer(ctx, log, database); err != nil {
+			log.Error(err, "Can't add finalizer to this custom-resource (database)")
 			return ctrl.Result{}, err
 		}
 	}
@@ -205,12 +213,12 @@ func (r *DatabaseReconciler) finalizeDatabase(ctx context.Context, log logr.Logg
 	return nil
 }
 
-func (r *DatabaseReconciler) addFinalizer(log logr.Logger, m *anbratengithubiov1alpha1.Database) error {
+func (r *DatabaseReconciler) addFinalizer(ctx context.Context, log logr.Logger, m *anbratengithubiov1alpha1.Database) error {
 	log.Info("Adding Finalizer for the database")
 	controllerutil.AddFinalizer(m, databaseFinalizer)
 
 	// Update CR
-	err := r.Update(context.TODO(), m)
+	err := r.Update(ctx, m)
 	if err != nil {
 		log.Error(err, "Failed to update database with finalizer")
 		return err
