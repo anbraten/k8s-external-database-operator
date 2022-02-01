@@ -41,7 +41,7 @@ spec:
                 description: Name of the database
                 type: string
               password:
-                description: Password of the databaser user
+                description: Password of the database user
                 type: string
               type:
                 description: 'Type of the database. (currently supported: mysql, couchdb, mongo, postgres)'
@@ -278,7 +278,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: anbraten/external-database-operator:0.0.9
+        image: anbraten/external-database-operator:0.2.0
         livenessProbe:
           httpGet:
             path: /healthz

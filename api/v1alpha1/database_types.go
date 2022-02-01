@@ -18,7 +18,7 @@ type DatabaseSpec struct {
 	// Username of the database user which will have full access to this database
 	Username string `json:"username,omitempty"`
 
-	// Password of the databaser user
+	// Password of the database user
 	Password string `json:"password,omitempty"`
 }
 
