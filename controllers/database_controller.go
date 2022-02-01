@@ -54,6 +54,9 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
+	// add loaded database details
+	log = log.WithValues("database", database.Spec.Database, "username", database.Spec.Username)
+
 	// use maximum of 3 seconds to connect
 	openCtx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*3))
 	defer cancel()
@@ -102,10 +105,10 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// Create database if necessary
 	hasDatabase, err := db.HasDatabase(ctx, database.Spec.Database)
 	if err != nil {
-		log.Error(err, "Couldn't check if database '", database.Spec.Database, "' exists")
+		log.Error(err, "Couldn't check if database exists")
 		return ctrl.Result{}, err
 	} else if !hasDatabase {
-		log.Info("Creating new database '", database.Spec.Database, "'")
+		log.Info("Creating new database '" + database.Spec.Database + "'")
 
 		err = db.CreateDatabase(ctx, database.Spec.Database)
 		if err != nil {
@@ -113,7 +116,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 
-		log.Info("Created database '", database.Spec.Database, "'")
+		log.Info("Created database '" + database.Spec.Database + "'")
 	}
 
 	// Create database user with full access if necessary
@@ -122,14 +125,14 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		log.Error(err, "Can't check if user has access to database")
 		return ctrl.Result{}, err
 	} else if !hasDatabaseUserWithAccess {
-		log.Info("Creating new user '" + database.Spec.Username + "' and granting access to database '" + database.Spec.Database + "'")
+		log.Info("Creating new user and granting access to database")
 
 		err = db.CreateDatabaseUser(ctx, database.Spec.Database, database.Spec.Username, database.Spec.Password)
 		if err != nil {
 			log.Error(err, "Can't create database user with access to database")
 			return ctrl.Result{}, err
 		}
-		log.Info("Created user '" + database.Spec.Username + "' and granted access to database '" + database.Spec.Database + "'")
+		log.Info("Created user and granted access to database")
 	}
 
 	return ctrl.Result{}, nil
@@ -177,13 +180,13 @@ func (r *DatabaseReconciler) finalizeDatabase(ctx context.Context, log logr.Logg
 	if err != nil {
 		return err
 	} else if hasDatabaseUserWithAccess {
-		log.Info("Removing user '" + database.Spec.Username + "' and revoking access to the database '" + database.Spec.Database + "'")
+		log.Info("Removing user and revoking access to the database")
 
 		err = db.DeleteDatabaseUser(ctx, database.Spec.Database, database.Spec.Username)
 		if err != nil {
 			return err
 		}
-		log.Info("Removed database user '" + database.Spec.Username + "' and revoked access to the database '" + database.Spec.Database + "'")
+		log.Info("Removed database user and revoked access to the database")
 	}
 
 	// remove database if it exists
@@ -191,13 +194,13 @@ func (r *DatabaseReconciler) finalizeDatabase(ctx context.Context, log logr.Logg
 	if err != nil {
 		return err
 	} else if hasDatabase {
-		log.Info("Removing database '" + database.Spec.Database + "'")
+		log.Info("Removing database")
 
 		err = db.DeleteDatabase(ctx, database.Spec.Database)
 		if err != nil {
 			return err
 		}
-		log.Info("Removed database '" + database.Spec.Database + "'")
+		log.Info("Removed database")
 	}
 
 	return nil
