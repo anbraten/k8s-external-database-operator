@@ -22,13 +22,14 @@ func (adapter mongoAdapter) HasDatabase(ctx context.Context, database string) (b
 	return contains(databaseNames, database), err
 }
 
-func (adapter mongoAdapter) CreateDatabase(ctx context.Context, name string) error {
-	adapter.client.Database(name)
-	return nil
+func (adapter mongoAdapter) CreateDatabase(ctx context.Context, database string) error {
+	// create dummy data as mongo only creates databases if they contain something
+	_, err := adapter.client.Database(database).Collection("__internal-placeholder__").InsertOne(ctx, bson.D{{Key: "empty", Value: true}})
+	return err
 }
 
-func (adapter mongoAdapter) DeleteDatabase(ctx context.Context, name string) error {
-	return adapter.client.Database(name).Drop(ctx)
+func (adapter mongoAdapter) DeleteDatabase(ctx context.Context, database string) error {
+	return adapter.client.Database(database).Drop(ctx)
 }
 
 func (adapter mongoAdapter) HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error) {
