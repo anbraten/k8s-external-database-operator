@@ -93,7 +93,13 @@ func (adapter couchdbAdapter) Close(ctx context.Context) error {
 func GetCouchdbConnection(ctx context.Context, url string) (*couchdbAdapter, error) {
 	client, err := kivik.New("couch", url)
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+
+	// do some call to test if connection is working
+	_, err = client.ClusterStatus(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	adapter := couchdbAdapter{

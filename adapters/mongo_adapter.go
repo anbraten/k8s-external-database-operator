@@ -74,7 +74,6 @@ func (adapter mongoAdapter) Close(ctx context.Context) error {
 func GetMongoConnection(ctx context.Context, url string) (*mongoAdapter, error) {
 	clientOpts := options.Client().ApplyURI(url)
 	client, err := mongo.Connect(ctx, clientOpts)
-
 	if err != nil {
 		return nil, err
 	}

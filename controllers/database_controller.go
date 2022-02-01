@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -53,7 +54,11 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	db, err := r.getDatabaseConnection(ctx, database.Spec.Type)
+	// use maximum of 3 seconds to connect
+	openCtx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*3))
+	defer cancel()
+
+	db, err := r.getDatabaseConnection(openCtx, database.Spec.Type)
 	if err != nil {
 		log.Error(err, "Failed to detect or open database connection")
 		return ctrl.Result{}, err
