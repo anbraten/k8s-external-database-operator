@@ -14,7 +14,7 @@ type mongoAdapter struct {
 }
 
 func (adapter mongoAdapter) HasDatabase(ctx context.Context, database string) (bool, error) {
-	databaseNames, err := adapter.client.ListDatabaseNames(ctx, bson.D{{Key: "empty", Value: false}})
+	databaseNames, err := adapter.client.ListDatabaseNames(ctx, bson.D{})
 	if err != nil {
 		return false, err
 	}
@@ -24,7 +24,7 @@ func (adapter mongoAdapter) HasDatabase(ctx context.Context, database string) (b
 
 func (adapter mongoAdapter) CreateDatabase(ctx context.Context, database string) error {
 	// create dummy data as mongo only creates databases if they contain something
-	_, err := adapter.client.Database(database).Collection("__internal-placeholder__").InsertOne(ctx, bson.D{{Key: "empty", Value: true}})
+	_, err := adapter.client.Database(database).Collection("delete_me").InsertOne(ctx, bson.D{{Key: "empty", Value: true}})
 	return err
 }
 

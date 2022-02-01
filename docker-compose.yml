@@ -15,3 +15,13 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: "1234"
     ports:
       - 27017:27017
+  mongo-express:
+      image: mongo-express
+      ports:
+        - 8081:8081
+      environment:
+        ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+        ME_CONFIG_MONGODB_ADMINPASSWORD: 1234
+        ME_CONFIG_MONGODB_SERVER: mongodb
+      depends_on:
+        - mongodb
