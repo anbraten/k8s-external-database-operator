@@ -78,7 +78,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(ctx, database.Spec.Username, database.Spec.Database)
+	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(ctx, database.Spec.Database, database.Spec.Username)
 	if err != nil {
 		log.Error(err, "Can't check if user has access to database")
 		return ctrl.Result{}, err
@@ -87,7 +87,7 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if !hasDatabaseUserWithAccess {
 		log.Info("Create new user '" + database.Spec.Username + "' with access to the database '" + database.Spec.Database + "'")
 
-		err = db.CreateDatabaseUser(ctx, database.Spec.Username, database.Spec.Password, database.Spec.Database)
+		err = db.CreateDatabaseUser(ctx, database.Spec.Database, database.Spec.Username, database.Spec.Password)
 		if err != nil {
 			log.Error(err, "Can't create database user with access to database")
 			return ctrl.Result{}, err
@@ -176,7 +176,7 @@ func (r *DatabaseReconciler) finalizeDatabase(ctx context.Context, log logr.Logg
 
 	defer db.Close(ctx)
 
-	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(ctx, database.Spec.Username, database.Spec.Database)
+	hasDatabaseUserWithAccess, err := db.HasDatabaseUserWithAccess(ctx, database.Spec.Database, database.Spec.Username)
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func (r *DatabaseReconciler) finalizeDatabase(ctx context.Context, log logr.Logg
 	if hasDatabaseUserWithAccess {
 		log.Info("Remove user '" + database.Spec.Username + "' and its access to the database '" + database.Spec.Database + "'")
 
-		err = db.DeleteDatabaseUser(ctx, database.Spec.Username, database.Spec.Database)
+		err = db.DeleteDatabaseUser(ctx, database.Spec.Database, database.Spec.Username)
 		if err != nil {
 			return err
 		}
