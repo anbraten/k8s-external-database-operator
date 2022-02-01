@@ -278,6 +278,32 @@ spec:
         - --leader-elect
         command:
         - /manager
+        env:
+        - name: MYSQL_HOST
+          valueFrom:
+            secretKeyRef:
+              key: mysqlHost
+              name: external-database-secrets
+        - name: MYSQL_ADMIN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: mysqlAdminUsername
+              name: external-database-secrets
+        - name: MYSQL_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: mysqlAdminPassword
+              name: external-database-secrets
+        - name: COUCHDB_URL
+          valueFrom:
+            secretKeyRef:
+              key: couchdbUrl
+              name: external-database-secrets
+        - name: MONGO_URL
+          valueFrom:
+            secretKeyRef:
+              key: mongoUrl
+              name: external-database-secrets
         image: anbraten/external-database-operator:0.2.0
         livenessProbe:
           httpGet:
@@ -301,32 +327,6 @@ spec:
             memory: 20Mi
         securityContext:
           allowPrivilegeEscalation: false
-      env:
-      - name: MYSQL_HOST
-        valueFrom:
-          secretKeyRef:
-            key: mysqlHost
-            name: external-database-secrets
-      - name: MYSQL_ADMIN_USERNAME
-        valueFrom:
-          secretKeyRef:
-            key: mysqlAdminUsername
-            name: external-database-secrets
-      - name: MYSQL_ADMIN_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            key: mysqlAdminPassword
-            name: external-database-secrets
-      - name: COUCHDB_URL
-        valueFrom:
-          secretKeyRef:
-            key: couchdbUrl
-            name: external-database-secrets
-      - name: MONGO_URL
-        valueFrom:
-          secretKeyRef:
-            key: mongoUrl
-            name: external-database-secrets
       securityContext:
         runAsNonRoot: true
       serviceAccountName: external-database-operator-controller-manager

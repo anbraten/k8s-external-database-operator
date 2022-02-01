@@ -8,29 +8,29 @@ spec:
     spec:
       containers:
       - name: manager
-      env:
-      - name: MYSQL_HOST
-        valueFrom:
-          secretKeyRef:
-            name: external-database-secrets
-            key: mysqlHost
-      - name: MYSQL_ADMIN_USERNAME
-        valueFrom:
-          secretKeyRef:
-            name: external-database-secrets
-            key: mysqlAdminUsername
-      - name: MYSQL_ADMIN_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: external-database-secrets
-            key: mysqlAdminPassword
-      - name: COUCHDB_URL
-        valueFrom:
-          secretKeyRef:
-            name: external-database-secrets
-            key: couchdbUrl
-      - name: MONGO_URL
-        valueFrom:
-          secretKeyRef:
-            name: external-database-secrets
-            key: mongoUrl
+        env:
+        - name: MYSQL_HOST
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: mysqlHost
+        - name: MYSQL_ADMIN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: mysqlAdminUsername
+        - name: MYSQL_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: mysqlAdminPassword
+        - name: COUCHDB_URL
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: couchdbUrl
+        - name: MONGO_URL
+          valueFrom:
+            secretKeyRef:
+              name: external-database-secrets
+              key: mongoUrl
