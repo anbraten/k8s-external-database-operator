@@ -20,17 +20,24 @@ spec:
   password: iwonttellyou
 ```
 
-> Important note: :rotating_light: Database settings (`type`, `database`, `username`, `password`) will possibly re-create the corresponding data and wont migrate the database or user.
+> Important note: :rotating_light: Changing database settings (`type`, `database`, `username`, `password`) will possibly re-create the corresponding data and wont migrate the database or user (data-loss of old database & custom user settings).
 
 ## Supported database types
 
 - mongo :white_check_mark:
-- mysql :hammer:
 - couchdb :white_check_mark:
+- mysql :hammer:
 - postgres :clock1:
 
-## Installation
+## Deployment
 
-### Requirements
+1. Adjust the secrets in `deploy/database-secrets.yml` to your needs.
+1. Deploy them using: `kubectl apply -f deploy/database-secrets.yml`
+1. Deploy the controller using: `kubectl apply -f deploy/external-database-controller.yml`
 
-### Deployment
+## Release
+
+To release a new version of the controller run:
+- `make docker-build`
+- `make docker-push`
+- `make release`

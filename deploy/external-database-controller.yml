@@ -278,7 +278,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: anbraten/external-database-operator:0.0.8
+        image: anbraten/external-database-operator:0.0.9
         livenessProbe:
           httpGet:
             path: /healthz
@@ -301,42 +301,32 @@ spec:
             memory: 20Mi
         securityContext:
           allowPrivilegeEscalation: false
-        env:
-        - name: MYSQL_HOST
-          valueFrom:
-            secretKeyRef:
-              name: external-database-secrets
-              key: mysqlHost
-        - name: MYSQL_ADMIN_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: external-database-secrets
-              key: mysqlAdminUsername
-        - name: MYSQL_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: external-database-secrets
-              key: mysqlAdminPassword
-        - name: COUCHDB_URL
-          valueFrom:
-            secretKeyRef:
-              name: external-database-secrets
-              key: couchdbUrl
-        - name: COUCHDB_ADMIN_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: external-database-secrets
-              key: couchdbAdminUsername
-        - name: COUCHDB_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: external-database-secrets
-              key: couchdbAdminPassword
-        - name: MONGO_URL
-          valueFrom:
-            secretKeyRef:
-              name: external-database-secrets
-              key: mongoUrl
+      env:
+      - name: MYSQL_HOST
+        valueFrom:
+          secretKeyRef:
+            key: mysqlHost
+            name: external-database-secrets
+      - name: MYSQL_ADMIN_USERNAME
+        valueFrom:
+          secretKeyRef:
+            key: mysqlAdminUsername
+            name: external-database-secrets
+      - name: MYSQL_ADMIN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: mysqlAdminPassword
+            name: external-database-secrets
+      - name: COUCHDB_URL
+        valueFrom:
+          secretKeyRef:
+            key: couchdbUrl
+            name: external-database-secrets
+      - name: MONGO_URL
+        valueFrom:
+          secretKeyRef:
+            key: mongoUrl
+            name: external-database-secrets
       securityContext:
         runAsNonRoot: true
       serviceAccountName: external-database-operator-controller-manager

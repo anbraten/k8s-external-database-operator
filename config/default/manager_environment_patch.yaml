@@ -10,14 +10,27 @@ spec:
       - name: manager
       env:
       - name: MYSQL_HOST
-        value: "127.0.0.1"
+        valueFrom:
+          secretKeyRef:
+            name: external-database-secrets
+            key: mysqlHost
       - name: MYSQL_ADMIN_USERNAME
-        value: "admin"
+        valueFrom:
+          secretKeyRef:
+            name: external-database-secrets
+            key: mysqlAdminUsername
       - name: MYSQL_ADMIN_PASSWORD
-        value: ""
+        valueFrom:
+          secretKeyRef:
+            name: external-database-secrets
+            key: mysqlAdminPassword
       - name: COUCHDB_URL
-        value: "http://127.0.0.1"
-      - name: COUCHDB_ADMIN_USERNAME
-        value: "admin"
-      - name: COUCHDB_ADMIN_PASSWORD
-        value: ""
+        valueFrom:
+          secretKeyRef:
+            name: external-database-secrets
+            key: couchdbUrl
+      - name: MONGO_URL
+        valueFrom:
+          secretKeyRef:
+            name: external-database-secrets
+            key: mongoUrl

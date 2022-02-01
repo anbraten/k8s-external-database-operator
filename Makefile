@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.3
+VERSION ?= 0.0.9
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "preview,fast,stable")
@@ -74,9 +74,13 @@ vet: ## Run go vet against code.
 
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 test: manifests generate fmt vet ## Run tests.
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+	docker-compose up -d
+	sleep 3s
+	go test -timeout 30s ./adapters/...
+	docker-compose down
+#	mkdir -p ${ENVTEST_ASSETS_DIR}
+# test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
+#	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
 ##@ Build
 
@@ -94,18 +98,18 @@ docker-push: ## Push docker image with the manager.
 
 ##@ Deployment
 
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+# install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+# 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
+# uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
+# 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+# deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+# 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+# 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+# undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+# 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
@@ -130,16 +134,16 @@ rm -rf $$TMP_DIR ;\
 }
 endef
 
-.PHONY: bundle ## Generate bundle manifests and metadata, then validate generated files.
-bundle: manifests kustomize
-	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	operator-sdk bundle validate ./bundle
+# .PHONY: bundle ## Generate bundle manifests and metadata, then validate generated files.
+# bundle: manifests kustomize
+# 	operator-sdk generate kustomize manifests -q
+# 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+# 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+# 	operator-sdk bundle validate ./bundle
 
-.PHONY: bundle-build ## Build the bundle image.
-bundle-build:
-	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+# .PHONY: bundle-build ## Build the bundle image.
+# bundle-build:
+# 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 ##@ Release
 
