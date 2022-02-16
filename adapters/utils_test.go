@@ -7,7 +7,9 @@ import (
 	"github.com/anbraten/k8s-external-database-operator/adapters"
 )
 
-func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdapter) {
+type ClientConnectTest func(databaseName string, databaseUsername string, databasePassword string) error
+
+func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdapter, clientConnectTest ClientConnectTest) {
 	// given
 	var err error
 	databaseName := "guestbook"
@@ -39,6 +41,11 @@ func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdap
 	}
 
 	// then
+	err = clientConnectTest(databaseName, databaseUsername, databasePassword)
+	if err != nil {
+		t.Fatalf("Error connecting to database: %s", err)
+	}
+
 	hasDatabase, err := adapter.HasDatabase(ctx, databaseName)
 	if err != nil {
 		t.Fatalf("Error creating database: %s", err)
