@@ -60,7 +60,7 @@ func (adapter mongoAdapter) CreateDatabaseUser(ctx context.Context, database str
 		bson.D{
 			{Key: "createUser", Value: username},
 			{Key: "pwd", Value: password},
-			{Key: "roles", Value: []bson.M{{"role": "dbAdmin", "db": database}}}}).Err()
+			{Key: "roles", Value: []bson.M{{"role": "dbAdmin", "db": database}, {"role": "readWrite", "db": database}}}}).Err()
 }
 
 func (adapter mongoAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
