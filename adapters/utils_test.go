@@ -7,13 +7,13 @@ import (
 	"github.com/anbraten/k8s-external-database-operator/adapters"
 )
 
-type ClientConnectTest func(databaseName string, databaseUsername string, databasePassword string) error
+type ClientConnectTest func(ctx context.Context, databaseName string, databaseUsername string, databasePassword string) error
 
 func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdapter, clientConnectTest ClientConnectTest) {
 	// given
 	var err error
 	databaseName := "guestbook"
-	databaseUsername := "guestbook-admin"
+	databaseUsername := "guestbook_admin"
 	databasePassword := "top-secret-123"
 
 	t.Cleanup(func() {
@@ -41,7 +41,7 @@ func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdap
 	}
 
 	// then
-	err = clientConnectTest(databaseName, databaseUsername, databasePassword)
+	err = clientConnectTest(ctx, databaseName, databaseUsername, databasePassword)
 	if err != nil {
 		t.Fatalf("Error connecting to database: %s", err)
 	}

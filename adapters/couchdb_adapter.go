@@ -44,7 +44,6 @@ func (adapter couchdbAdapter) HasDatabaseUserWithAccess(ctx context.Context, dat
 }
 
 func (adapter couchdbAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
-
 	exists, err := adapter.db.DBExists(ctx, "_users")
 	if err != nil {
 		return err

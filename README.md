@@ -26,8 +26,9 @@ spec:
 
 - mongo :white_check_mark:
 - couchdb :white_check_mark:
-- mysql :hammer:
-- postgres :clock1:
+- mysql :white_check_mark:
+- postgres :white_check_mark:
+- mssql :white_check_mark:
 
 ## Deployment
 

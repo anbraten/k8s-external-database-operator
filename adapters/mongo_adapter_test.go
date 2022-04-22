@@ -15,14 +15,15 @@ func TestMongoDB(t *testing.T) {
 	databasePort := "27017"
 
 	ctx := context.Background()
-	mongodbUrl := fmt.Sprintf("mongodb://admin:1234@%s:%s/?authSource=admin", databaseHost, databasePort)
-	adapter, err := adapters.GetMongoConnection(ctx, mongodbUrl)
+	url := fmt.Sprintf("mongodb://%s:%s@%s:%s/?authSource=admin", "admin", "pA%sw0rd", databaseHost, databasePort)
+	adapter, err := adapters.GetMongoConnection(ctx, url)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)
 	}
 
-	clientConnectTest := func(databaseName string, databaseUsername string, databasePassword string) error {
-		clientOpts := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", databaseUsername, databasePassword, databaseHost, databasePort, databaseName))
+	clientConnectTest := func(ctx context.Context, databaseName string, databaseUsername string, databasePassword string) error {
+		url := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", databaseUsername, databasePassword, databaseHost, databasePort, databaseName)
+		clientOpts := options.Client().ApplyURI(url)
 		client, err := mongo.Connect(ctx, clientOpts)
 		if err != nil {
 			return err
