@@ -14,7 +14,7 @@ func TestMySqlDB(t *testing.T) {
 	databasePort := "3306"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("%s:%s@tcp(%s:%s)/", "root", "pA%sw0rd", databaseHost, databasePort)
+	url := fmt.Sprintf("%s:%s@tcp(%s:%s)/", "root", "pA_sw0rd", databaseHost, databasePort)
 	adapter, err := adapters.GetMysqlConnection(ctx, url)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)

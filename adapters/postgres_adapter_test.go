@@ -15,7 +15,7 @@ func TestPostgresDB(t *testing.T) {
 	databasePort := "5432"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("postgres://%s:%s@%s:%s?sslmode=disable", "postgres", "pA%sw0rd", databaseHost, databasePort)
+	url := fmt.Sprintf("postgres://%s:%s@%s:%s?sslmode=disable", "postgres", "pA_sw0rd", databaseHost, databasePort)
 	adapter, err := adapters.GetPostgresConnection(ctx, url)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)

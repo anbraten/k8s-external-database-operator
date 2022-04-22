@@ -15,7 +15,7 @@ func TestMongoDB(t *testing.T) {
 	databasePort := "27017"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("mongodb://%s:%s@%s:%s/?authSource=admin", "admin", "pA%sw0rd", databaseHost, databasePort)
+	url := fmt.Sprintf("mongodb://%s:%s@%s:%s/?authSource=admin", "admin", "pA_sw0rd", databaseHost, databasePort)
 	adapter, err := adapters.GetMongoConnection(ctx, url)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)

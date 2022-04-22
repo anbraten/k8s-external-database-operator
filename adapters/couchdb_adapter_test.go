@@ -14,7 +14,7 @@ func TestCouchDB(t *testing.T) {
 	databasePort := "5984"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("http://%s:%s@%s:%s", "admin", "pA%sw0rd", databaseHost, databasePort)
+	url := fmt.Sprintf("http://%s:%s@%s:%s", "admin", "pA_sw0rd", databaseHost, databasePort)
 	adapter, err := adapters.GetCouchdbConnection(ctx, url)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)

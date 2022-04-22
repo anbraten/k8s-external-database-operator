@@ -14,7 +14,7 @@ func TestMsSqlDB(t *testing.T) {
 	databasePort := "1433"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("mssql://%s:%s@%s:%s", "sa", "pA%sw0rd", databaseHost, databasePort)
+	url := fmt.Sprintf("mssql://%s:%s@%s:%s", "sa", "pA_sw0rd", databaseHost, databasePort)
 	adapter, err := adapters.GetCouchdbConnection(ctx, url)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)
