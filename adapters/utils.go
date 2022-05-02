@@ -10,11 +10,8 @@ import (
 var IdentifierRegex = regexp.MustCompile(`^[a-zA-Z0-9]+?[a-zA-Z0-9_-]*?$`)
 
 func QuoteLiteral(txt string) string {
+	// TODO: find prettier solution without needing an additional lib :cry: https://github.com/jackc/pgx/issues/868
 	return pq.QuoteLiteral(txt)
-}
-
-func QuoteIdentifier(txt string) string {
-	return pq.QuoteIdentifier(txt)
 }
 
 func IsValidIdentifier(txt string) error {

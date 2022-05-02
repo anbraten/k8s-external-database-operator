@@ -29,6 +29,7 @@ func TestMongoDB(t *testing.T) {
 			return err
 		}
 		defer client.Disconnect(ctx)
+
 		_, err = client.Database(databaseName).Collection("test").InsertOne(ctx, map[string]interface{}{"test": "test"})
 		return err
 	}

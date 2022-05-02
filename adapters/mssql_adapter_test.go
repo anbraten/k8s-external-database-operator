@@ -26,17 +26,10 @@ func TestMsSqlDB(t *testing.T) {
 		if err != nil {
 			return err
 		}
-
-		if err = client.PingContext(ctx); err != nil {
-			return err
-		}
+		defer client.Close()
 
 		_, err = client.ExecContext(ctx, "CREATE TABLE test (id int);")
-		if err != nil {
-			return err
-		}
-
-		return client.Close()
+		return err
 	}
 
 	testHelper(t, ctx, adapter, clientConnectTest)

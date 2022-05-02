@@ -26,6 +26,8 @@ func TestCouchDB(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		defer client.Close(ctx)
+
 		_, _, err = client.DB(databaseName).CreateDoc(ctx, map[string]interface{}{"test": "test"})
 		return err
 	}

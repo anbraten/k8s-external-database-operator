@@ -26,6 +26,7 @@ func TestMySqlDB(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		defer client.Close()
 
 		_, err = client.ExecContext(ctx, "CREATE TABLE test (id int);")
 		return err
