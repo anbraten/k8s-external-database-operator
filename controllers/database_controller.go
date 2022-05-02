@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -56,6 +57,19 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// add loaded database details
 	log = log.WithValues("database", database.Spec.Database, "username", database.Spec.Username)
+
+	// check if database and username is sql safe if not mongo and not couchdb
+	if database.Spec.Type != "mongo" && database.Spec.Type != "couchdb" {
+		if err = adapters.IsValidIdentifier(database.Spec.Database); err != nil {
+			log.Error(err, fmt.Sprintf("Please make sure your database name matches '%s'", adapters.IdentifierRegex.String()))
+			return ctrl.Result{}, err
+		}
+
+		if err = adapters.IsValidIdentifier(database.Spec.Username); err != nil {
+			log.Error(err, fmt.Sprintf("Please make sure your database username matches '%s'", adapters.IdentifierRegex.String()))
+			return ctrl.Result{}, err
+		}
+	}
 
 	// use maximum of 3 seconds to connect
 	openCtx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*3))
@@ -139,39 +153,45 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *DatabaseReconciler) getDatabaseConnection(ctx context.Context, databaseType string) (adapters.DatabaseAdapter, error) {
-	if databaseType == "mysql" {
-		mysqlHost := os.Getenv("MYSQL_HOST")
-		mysqlAdminUsername := os.Getenv("MYSQL_ADMIN_USERNAME")
-		mysqlAdminPassword := os.Getenv("MYSQL_ADMIN_PASSWORD")
-
-		if mysqlHost == "" || mysqlAdminUsername == "" || mysqlAdminPassword == "" {
-			return nil, errors.NewBadRequest("Mysql database not configured (provide: MYSQL_HOST, MYSQL_ADMIN_USERNAME, MYSQL_ADMIN_PASSWORD)")
+	switch databaseType {
+	case "mysql":
+		mysqlDSN := os.Getenv("MYSQL_DSN")
+		if mysqlDSN == "" {
+			return nil, errors.NewBadRequest("Mysql database not configured (provide: MYSQL_DSN)")
 		}
+		return adapters.GetMysqlConnection(ctx, mysqlDSN)
 
-		return adapters.GetMysqlConnection(ctx, mysqlHost, mysqlAdminUsername, mysqlAdminPassword)
-	}
-
-	if databaseType == "couchdb" {
+	case "couchdb":
 		couchdbURL := os.Getenv("COUCHDB_URL")
-
 		if couchdbURL == "" {
 			return nil, errors.NewBadRequest("Couchdb database not configured (provide: COUCHDB_URL)")
 		}
-
 		return adapters.GetCouchdbConnection(ctx, couchdbURL)
-	}
 
-	if databaseType == "mongo" {
+	case "mongo":
 		mongoURL := os.Getenv("MONGO_URL")
-
 		if mongoURL == "" {
 			return nil, errors.NewBadRequest("Mongo database not configured (provide: MONGO_URL)")
 		}
-
 		return adapters.GetMongoConnection(ctx, mongoURL)
-	}
 
-	return nil, errors.NewBadRequest("Database type not supported")
+	case "postgres":
+		postgresURL := os.Getenv("POSTGRES_URL")
+		if postgresURL == "" {
+			return nil, errors.NewBadRequest("Postgres database not configured (provide: POSTGRES_URL)")
+		}
+		return adapters.GetPostgresConnection(ctx, postgresURL)
+
+	case "mssql":
+		mssqlURL := os.Getenv("MSSQL_URL")
+		if mssqlURL == "" {
+			return nil, errors.NewBadRequest("MS-SQL database not configured (provide: MSSQL_URL)")
+		}
+		return adapters.GetMssqlConnection(ctx, mssqlURL)
+
+	default:
+		return nil, errors.NewBadRequest("Database type not supported")
+	}
 }
 
 func (r *DatabaseReconciler) finalizeDatabase(ctx context.Context, log logr.Logger, db adapters.DatabaseAdapter, database *anbratengithubiov1alpha1.Database) error {

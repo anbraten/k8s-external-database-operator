@@ -279,20 +279,10 @@ spec:
         command:
         - /manager
         env:
-        - name: MYSQL_HOST
+        - name: MYSQL_DSN
           valueFrom:
             secretKeyRef:
-              key: mysqlHost
-              name: external-database-secrets
-        - name: MYSQL_ADMIN_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: mysqlAdminUsername
-              name: external-database-secrets
-        - name: MYSQL_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: mysqlAdminPassword
+              key: mysqlDsn
               name: external-database-secrets
         - name: COUCHDB_URL
           valueFrom:
@@ -303,6 +293,16 @@ spec:
           valueFrom:
             secretKeyRef:
               key: mongoUrl
+              name: external-database-secrets
+        - name: POSTGRES_URL
+          valueFrom:
+            secretKeyRef:
+              key: postgresUrl
+              name: external-database-secrets
+        - name: MSSQL_URL
+          valueFrom:
+            secretKeyRef:
+              key: mssqlUrl
               name: external-database-secrets
         image: anbraten/external-database-operator:0.2.0
         livenessProbe:

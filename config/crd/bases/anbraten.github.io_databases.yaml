@@ -44,7 +44,7 @@ spec:
                 type: string
               type:
                 description: 'Type of the database. (currently supported: mysql, couchdb,
-                  mongo, postgres)'
+                  mongo, postgres, mssql)'
                 type: string
               username:
                 description: Username of the database user which will have full access
