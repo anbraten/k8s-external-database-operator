@@ -58,14 +58,17 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// add loaded database details
 	log = log.WithValues("database", database.Spec.Database, "username", database.Spec.Username)
 
-	if err = adapters.IsValidIdentifier(database.Spec.Database); err != nil {
-		log.Error(err, fmt.Sprintf("Please make sure your database name matches '%s'", adapters.IdentifierRegex.String()))
-		return ctrl.Result{}, err
-	}
+	// check if database and username is sql safe if not mongo and not couchdb
+	if database.Spec.Type != "mongo" && database.Spec.Type != "couchdb" {
+		if err = adapters.IsValidIdentifier(database.Spec.Database); err != nil {
+			log.Error(err, fmt.Sprintf("Please make sure your database name matches '%s'", adapters.IdentifierRegex.String()))
+			return ctrl.Result{}, err
+		}
 
-	if err = adapters.IsValidIdentifier(database.Spec.Username); err != nil {
-		log.Error(err, fmt.Sprintf("Please make sure your database username matches '%s'", adapters.IdentifierRegex.String()))
-		return ctrl.Result{}, err
+		if err = adapters.IsValidIdentifier(database.Spec.Username); err != nil {
+			log.Error(err, fmt.Sprintf("Please make sure your database username matches '%s'", adapters.IdentifierRegex.String()))
+			return ctrl.Result{}, err
+		}
 	}
 
 	// use maximum of 3 seconds to connect
