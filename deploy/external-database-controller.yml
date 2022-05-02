@@ -347,4 +347,4 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: external-database-operator-controller-manager
-      terminationGracePeriodSeconds: 1
+      terminationGracePeriodSeconds: 10
