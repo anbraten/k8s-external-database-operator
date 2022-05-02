@@ -14,8 +14,8 @@ type mssqlAdapter struct {
 
 func (adapter mssqlAdapter) HasDatabase(ctx context.Context, database string) (bool, error) {
 	var count int
-	query := fmt.Sprintf("SELECT COUNT(*) FROM master.sys.databases WHERE name=@p1")
-	err := adapter.db.QueryRowContext(ctx, query, database).Scan(&count)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM master.sys.databases WHERE name='%s';", database)
+	err := adapter.db.QueryRowContext(ctx, query).Scan(&count)
 	if err != nil {
 		return false, err
 	}
@@ -23,38 +23,51 @@ func (adapter mssqlAdapter) HasDatabase(ctx context.Context, database string) (b
 }
 
 func (adapter mssqlAdapter) CreateDatabase(ctx context.Context, database string) error {
-	_, err := adapter.db.ExecContext(ctx, "CREATE DATABASE @p1;", database)
-	return err
-}
-
-func (adapter mssqlAdapter) DeleteDatabase(ctx context.Context, database string) error {
-	_, err := adapter.db.ExecContext(ctx, "DROP DATABASE @p1;", database)
-	return err
-}
-
-func (adapter mssqlAdapter) HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error) {
-	// TODO implement
-	return false, nil
-}
-
-func (adapter mssqlAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
-	// make password sql safe
-	quotedPassword := QuoteLiteral(password)
-	query := fmt.Sprintf("CREATE USER %s WITH PASSWORD = %s", username, quotedPassword)
+	query := fmt.Sprintf("EXEC ('sp_configure ''contained database authentication'', 1; reconfigure;');")
 	_, err := adapter.db.ExecContext(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	query = fmt.Sprintf("GRANT ALL PRIVILEGES ON DATABASE %s TO %s;", database, username)
+	query = fmt.Sprintf("CREATE DATABASE [%s] CONTAINMENT=PARTIAL;", database)
 	_, err = adapter.db.ExecContext(ctx, query)
+	return err
+}
 
+func (adapter mssqlAdapter) DeleteDatabase(ctx context.Context, database string) error {
+	query := fmt.Sprintf("DROP DATABASE [%s];", database)
+	_, err := adapter.db.ExecContext(ctx, query)
+	return err
+}
+
+func (adapter mssqlAdapter) HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error) {
+	var count int
+	query := fmt.Sprintf("USE [%s]; SELECT COUNT(*) FROM sys.database_principals WHERE authentication_type=2 AND name='%s';", database, username)
+	err := adapter.db.QueryRowContext(ctx, query).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count == 1, nil
+}
+
+func (adapter mssqlAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
+	// make password sql safe
+	quotedPassword := QuoteLiteral(password)
+	query := fmt.Sprintf("USE [%s]; CREATE USER [%s] WITH PASSWORD=%s", database, username, quotedPassword)
+	_, err := adapter.db.ExecContext(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	query = fmt.Sprintf("USE [%s]; ALTER ROLE db_owner ADD MEMBER [%s];", database, username)
+	_, err = adapter.db.ExecContext(ctx, query)
 	return err
 }
 
 func (adapter mssqlAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
-	// TODO implement
-	return nil
+	query := fmt.Sprintf("USE [%s]; DROP USER %s;", database, username)
+	_, err := adapter.db.ExecContext(ctx, query)
+	return err
 }
 
 func (adapter mssqlAdapter) Close(ctx context.Context) error {
@@ -62,13 +75,17 @@ func (adapter mssqlAdapter) Close(ctx context.Context) error {
 }
 
 func GetMssqlConnection(ctx context.Context, url string) (*mssqlAdapter, error) {
-	db, err := sql.Open("mssql", url)
+	db, err := sql.Open("sqlserver", url)
 	if err != nil {
 		return nil, err
 	}
 
 	adapter := mssqlAdapter{
 		db: db,
+	}
+
+	if err := adapter.db.PingContext(ctx); err != nil {
+		return nil, err
 	}
 
 	return &adapter, nil

@@ -14,21 +14,29 @@ func TestMsSqlDB(t *testing.T) {
 	databasePort := "1433"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("mssql://%s:%s@%s:%s", "sa", "pA_sw0rd", databaseHost, databasePort)
-	adapter, err := adapters.GetCouchdbConnection(ctx, url)
+	url := fmt.Sprintf("sqlserver://%s:%s@%s:%s", "sa", "pA_sw0rd", databaseHost, databasePort)
+	adapter, err := adapters.GetMssqlConnection(ctx, url)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)
 	}
 
 	clientConnectTest := func(ctx context.Context, databaseName string, databaseUsername string, databasePassword string) error {
-		url := fmt.Sprintf("sqlserver://%s:%s@%s:%s", databaseUsername, databasePassword, databaseHost, databasePort)
+		url := fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s", databaseUsername, databasePassword, databaseHost, databasePort, databaseName)
 		client, err := sql.Open("sqlserver", url)
 		if err != nil {
 			return err
 		}
 
+		if err = client.PingContext(ctx); err != nil {
+			return err
+		}
+
 		_, err = client.ExecContext(ctx, "CREATE TABLE test (id int);")
-		return err
+		if err != nil {
+			return err
+		}
+
+		return client.Close()
 	}
 
 	testHelper(t, ctx, adapter, clientConnectTest)
