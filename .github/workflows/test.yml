@@ -70,6 +70,7 @@ jobs:
 
       - name: Test manifest for un-commited changes
         run: |
+          export IMG="anbraten/external-database-operator:0.0.1"
           make generate-manifests
           ! git status -u | grep deploy/external-database-controller.yml
 
@@ -95,7 +96,6 @@ jobs:
 
       - name: Build container images
         run: |
-          export VERSION=${GITHUB_REF#refs/*/}
-          export IMG="anbraten/external-database-operator:${VERSION}"
+          export IMG="anbraten/external-database-operator:0.0.1"
           make build
           make docker-build
