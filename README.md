@@ -34,11 +34,17 @@ spec:
 
 1. Adjust the secrets in `deploy/database-secrets.yml` to your needs.
 1. Deploy them using: `kubectl apply -f deploy/database-secrets.yml`
-1. Deploy the controller using: `kubectl apply -f deploy/external-database-controller.yml`
+1. Deploy the controller using: `kubectl apply -f https://github.com/anbraten/k8s-external-database-operator/latest/download/external-database-controller.yml`
 
 ## Release
 
 To release a new version of the controller run:
-- `make docker-build`
-- `make docker-push`
-- `make release`
+
+```bash
+export VERSION="0.0.1"
+export IMG="anbraten/external-database-operator:${VERSION}"
+make docker-build
+make docker-push
+make generate-manifests
+cat deploy/external-database-controller.yml
+```
