@@ -65,7 +65,7 @@ func (adapter mssqlAdapter) CreateDatabaseUser(ctx context.Context, database str
 }
 
 func (adapter mssqlAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
-	query := fmt.Sprintf("USE [%s]; DROP USER %s;", database, username)
+	query := fmt.Sprintf("USE [%s]; DROP USER [%s];", database, username)
 	_, err := adapter.db.ExecContext(ctx, query)
 	return err
 }

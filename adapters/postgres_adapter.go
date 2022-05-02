@@ -22,13 +22,13 @@ func (adapter postgresAdapter) HasDatabase(ctx context.Context, database string)
 }
 
 func (adapter postgresAdapter) CreateDatabase(ctx context.Context, database string) error {
-	query := fmt.Sprintf("CREATE DATABASE %s", database)
+	query := fmt.Sprintf("CREATE DATABASE \"%s\";", database)
 	_, err := adapter.db.Exec(ctx, query)
 	return err
 }
 
 func (adapter postgresAdapter) DeleteDatabase(ctx context.Context, database string) error {
-	query := fmt.Sprintf("DROP DATABASE %s", database)
+	query := fmt.Sprintf("DROP DATABASE \"%s\";", database)
 	_, err := adapter.db.Exec(ctx, query)
 	return err
 }
@@ -46,13 +46,13 @@ func (adapter postgresAdapter) HasDatabaseUserWithAccess(ctx context.Context, da
 func (adapter postgresAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
 	// make password sql safe
 	quotedPassword := QuoteLiteral(password)
-	query := fmt.Sprintf("CREATE USER %s WITH PASSWORD %s", username, quotedPassword)
+	query := fmt.Sprintf("CREATE USER \"%s\" WITH PASSWORD %s", username, quotedPassword)
 	_, err := adapter.db.Exec(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	query = fmt.Sprintf("GRANT ALL PRIVILEGES ON DATABASE %s TO %s;", database, username)
+	query = fmt.Sprintf("GRANT ALL PRIVILEGES ON DATABASE \"%s\" TO \"%s\";", database, username)
 	_, err = adapter.db.Exec(ctx, query)
 
 	return err
@@ -72,19 +72,19 @@ func (adapter postgresAdapter) DeleteDatabaseUser(ctx context.Context, database 
 	}
 	defer conn.Close(ctx)
 
-	query := fmt.Sprintf("DROP OWNED BY %s;", username)
+	query := fmt.Sprintf("DROP OWNED BY \"%s\";", username)
 	_, err = conn.Exec(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	query = fmt.Sprintf("REVOKE ALL PRIVILEGES ON DATABASE %s FROM %s; REVOKE ALL ON SCHEMA public FROM %s;", database, username, username)
+	query = fmt.Sprintf("REVOKE ALL PRIVILEGES ON DATABASE \"%s\" FROM \"%s\"; REVOKE ALL ON SCHEMA public FROM \"%s\";", database, username, username)
 	_, err = adapter.db.Exec(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	query = fmt.Sprintf("DROP USER %s;", username)
+	query = fmt.Sprintf("DROP USER \"%s\";", username)
 	_, err = adapter.db.Exec(ctx, query)
 	return err
 }
