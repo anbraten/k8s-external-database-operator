@@ -34,7 +34,7 @@ spec:
 
 1. Adjust the secrets in `deploy/database-secrets.yml` to your needs.
 1. Deploy them using: `kubectl apply -f deploy/database-secrets.yml`
-1. Deploy the controller using: `kubectl apply -f https://github.com/anbraten/k8s-external-database-operator/latest/download/external-database-controller.yml`
+1. Deploy the controller using: `kubectl apply -f https://github.com/anbraten/k8s-external-database-operator/releases/latest/download/external-database-controller.yml`
 
 ## Release
 
