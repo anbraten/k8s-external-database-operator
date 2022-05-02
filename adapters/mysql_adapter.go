@@ -21,13 +21,13 @@ func (adapter mysqlAdapter) HasDatabase(ctx context.Context, database string) (b
 }
 
 func (adapter mysqlAdapter) CreateDatabase(ctx context.Context, database string) error {
-	query := fmt.Sprintf("CREATE DATABASE %s;", database)
+	query := fmt.Sprintf("CREATE DATABASE `%s`;", database)
 	_, err := adapter.db.ExecContext(ctx, query)
 	return err
 }
 
 func (adapter mysqlAdapter) DeleteDatabase(ctx context.Context, database string) error {
-	query := fmt.Sprintf("DROP DATABASE %s;", database)
+	query := fmt.Sprintf("DROP DATABASE `%s`;", database)
 	_, err := adapter.db.ExecContext(ctx, query)
 	return err
 }
@@ -42,13 +42,13 @@ func (adapter mysqlAdapter) HasDatabaseUserWithAccess(ctx context.Context, datab
 func (adapter mysqlAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
 	// make password sql safe
 	quotedPassword := QuoteLiteral(password)
-	query := fmt.Sprintf("CREATE USER '%s'@'%%' IDENTIFIED BY %s;", username, quotedPassword)
+	query := fmt.Sprintf("CREATE USER `%s`@'%%' IDENTIFIED BY %s;", username, quotedPassword)
 	_, err := adapter.db.ExecContext(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	query = fmt.Sprintf("GRANT ALL PRIVILEGES ON %s.* TO '%s'@'%%';", database, username)
+	query = fmt.Sprintf("GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@'%%';", database, username)
 	_, err = adapter.db.ExecContext(ctx, query)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func (adapter mysqlAdapter) CreateDatabaseUser(ctx context.Context, database str
 }
 
 func (adapter mysqlAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
-	query := fmt.Sprintf("DROP USER %s;", username)
+	query := fmt.Sprintf("DROP USER '%s';", username)
 	_, err := adapter.db.ExecContext(ctx, query)
 	return err
 }

@@ -12,9 +12,9 @@ type ClientConnectTest func(ctx context.Context, databaseName string, databaseUs
 func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdapter, clientConnectTest ClientConnectTest) {
 	// given
 	var err error
-	databaseName := "guestbook"
-	databaseUsername := "guestbook_admin"
-	databasePassword := "top-secret-123"
+	databaseName := "guestbook-admin_123"
+	databaseUsername := "guestbook-admin_123"
+	databasePassword := "top_secret-123!"
 
 	t.Cleanup(func() {
 		if err = adapter.DeleteDatabaseUser(ctx, databaseName, databaseUsername); err != nil {
