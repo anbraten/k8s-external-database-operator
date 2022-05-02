@@ -321,7 +321,7 @@ spec:
             secretKeyRef:
               key: mssqlUrl
               name: external-database-secrets
-        image: anbraten/external-database-operator:0.5.0
+        image: anbraten/external-database-operator:0.0.1
         livenessProbe:
           httpGet:
             path: /healthz
