@@ -15,7 +15,7 @@ type postgresAdapter struct {
 
 func (adapter postgresAdapter) HasDatabase(ctx context.Context, database string) (bool, error) {
 	var count int
-	query := fmt.Sprintf("SELECT COUNT(*) FROM pg_database WHERE datname=%s", database)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM pg_database WHERE datname='%s'", database)
 	err := adapter.db.QueryRowContext(ctx, query).Scan(&count)
 	if err != nil {
 		return false, err
@@ -37,7 +37,7 @@ func (adapter postgresAdapter) DeleteDatabase(ctx context.Context, database stri
 
 func (adapter postgresAdapter) HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error) {
 	var hasPrivilege bool
-	query := fmt.Sprintf("SELECT has_database_privilege(%s, %s, 'CONNECT');", username, database)
+	query := fmt.Sprintf("SELECT has_database_privilege('%s', '%s', 'CONNECT');", username, database)
 	err := adapter.db.QueryRowContext(ctx, query).Scan(&hasPrivilege)
 	if err != nil {
 		return false, err

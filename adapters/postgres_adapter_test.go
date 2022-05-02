@@ -29,7 +29,11 @@ func TestPostgresDB(t *testing.T) {
 		}
 
 		_, err = client.ExecContext(ctx, "CREATE TABLE test (id int);")
-		return err
+		if err != nil {
+			return err
+		}
+
+		return client.Close()
 	}
 
 	testHelper(t, ctx, adapter, clientConnectTest)
