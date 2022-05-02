@@ -25,6 +25,13 @@ jobs:
           go-version: ${{ matrix.go-version }}
         id: go
 
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
@@ -48,8 +55,15 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v1
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.17.x
         id: go
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
@@ -58,3 +72,30 @@ jobs:
         run: |
           make generate-manifests
           ! git status -u | grep deploy/external-database-controller.yml
+
+  test-build:
+    name: Build container image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.17.x
+        id: go
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Build container images
+        run: |
+          export VERSION=${GITHUB_REF#refs/*/}
+          export IMG="anbraten/external-database-operator:${VERSION}"
+          make build
+          make docker-build
