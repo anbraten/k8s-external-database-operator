@@ -9,28 +9,28 @@ spec:
       containers:
       - name: manager
         env:
-        - name: MYSQL_HOST
+        - name: MYSQL_DSN
           valueFrom:
             secretKeyRef:
+              key: mysqlDsn
               name: external-database-secrets
-              key: mysqlHost
-        - name: MYSQL_ADMIN_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: external-database-secrets
-              key: mysqlAdminUsername
-        - name: MYSQL_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: external-database-secrets
-              key: mysqlAdminPassword
         - name: COUCHDB_URL
           valueFrom:
             secretKeyRef:
-              name: external-database-secrets
               key: couchdbUrl
+              name: external-database-secrets
         - name: MONGO_URL
           valueFrom:
             secretKeyRef:
-              name: external-database-secrets
               key: mongoUrl
+              name: external-database-secrets
+        - name: POSTGRES_URL
+          valueFrom:
+            secretKeyRef:
+              key: postgresUrl
+              name: external-database-secrets
+        - name: MSSQL_URL
+          valueFrom:
+            secretKeyRef:
+              key: mssqlUrl
+              name: external-database-secrets

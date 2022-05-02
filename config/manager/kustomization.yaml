@@ -13,4 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: anbraten/external-database-operator
-  newTag: 0.2.0
+  newTag: 0.0.1
