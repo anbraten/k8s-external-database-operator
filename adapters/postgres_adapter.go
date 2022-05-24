@@ -34,12 +34,23 @@ func (adapter postgresAdapter) DeleteDatabase(ctx context.Context, database stri
 }
 
 func (adapter postgresAdapter) HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error) {
-	var hasPrivilege bool
-	query := fmt.Sprintf("SELECT has_database_privilege('%s', '%s', 'CONNECT');", username, database)
-	err := adapter.db.QueryRow(ctx, query).Scan(&hasPrivilege)
+	var count int
+	query := fmt.Sprintf("SELECT COUNT(*) FROM pg_roles WHERE rolname='%s';", username)
+	err := adapter.db.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
 		return false, err
 	}
+	if count == 0 {
+		return false, nil
+	}
+
+	var hasPrivilege bool
+	query = fmt.Sprintf("SELECT has_database_privilege('%s', '%s', 'CONNECT');", username, database)
+	err = adapter.db.QueryRow(ctx, query).Scan(&hasPrivilege)
+	if err != nil {
+		return false, err
+	}
+
 	return hasPrivilege, nil
 }
 
