@@ -9,7 +9,7 @@ import (
 	"github.com/anbraten/k8s-external-database-operator/adapters"
 )
 
-func TestMySqlDB(t *testing.T) {
+func prepareMySqlDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, ClientConnectTest) {
 	databaseHost := "localhost"
 	databasePort := "3306"
 
@@ -32,5 +32,17 @@ func TestMySqlDB(t *testing.T) {
 		return err
 	}
 
+	return ctx, adapter, clientConnectTest
+}
+
+func TestMySqlDB(t *testing.T) {
+	ctx, adapter, clientConnectTest := prepareMySqlDB(t)
+
 	testHelper(t, ctx, adapter, clientConnectTest)
+}
+
+func TestMySqlDBCleanup(t *testing.T) {
+	ctx, adapter, _ := prepareMySqlDB(t)
+
+	cleanupTestHelper(t, ctx, adapter)
 }

@@ -60,3 +60,13 @@ func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdap
 		t.Fatalf("Database user does not exists")
 	}
 }
+
+func cleanupTestHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdapter) {
+	result, err := adapter.HasDatabaseUserWithAccess(ctx, "non-existing-db", "non-existing-user")
+	if err != nil {
+		t.Fatalf("Checking for existing database user failed: %s", err)
+	}
+	if result {
+		t.Fatalf("database and user existing but expecting to be non-existing")
+	}
+}
