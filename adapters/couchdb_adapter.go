@@ -29,6 +29,14 @@ func (adapter couchdbAdapter) DeleteDatabase(ctx context.Context, database strin
 }
 
 func (adapter couchdbAdapter) HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error) {
+	dbExists, dbExistsErr := adapter.HasDatabase(ctx, database)
+	if dbExistsErr != nil {
+		return false, dbExistsErr
+	}
+	if !dbExists {
+		return false, nil
+	}
+
 	sc, err := adapter.db.DB(database).Security(ctx)
 	if err != nil {
 		return false, err
