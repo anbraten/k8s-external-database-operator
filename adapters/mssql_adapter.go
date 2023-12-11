@@ -41,6 +41,14 @@ func (adapter mssqlAdapter) DeleteDatabase(ctx context.Context, database string)
 }
 
 func (adapter mssqlAdapter) HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error) {
+	dbExists, dbExistsErr := adapter.HasDatabase(ctx, database)
+	if dbExistsErr != nil {
+		return false, dbExistsErr
+	}
+	if !dbExists {
+		return false, nil
+	}
+
 	var count int
 	query := fmt.Sprintf("USE [%s]; SELECT COUNT(*) FROM sys.database_principals WHERE authentication_type=2 AND name='%s';", database, username)
 	err := adapter.db.QueryRowContext(ctx, query).Scan(&count)
