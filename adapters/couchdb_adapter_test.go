@@ -9,7 +9,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 )
 
-func TestCouchDB(t *testing.T) {
+func prepareCouchDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, ClientConnectTest) {
 	databaseHost := "localhost"
 	databasePort := "5984"
 
@@ -32,5 +32,17 @@ func TestCouchDB(t *testing.T) {
 		return err
 	}
 
+	return ctx, adapter, clientConnectTest
+}
+
+func TestCouchDB(t *testing.T) {
+	ctx, adapter, clientConnectTest := prepareCouchDB(t)
+
 	testHelper(t, ctx, adapter, clientConnectTest)
+}
+
+func TestCouchDBCleanup(t *testing.T) {
+	ctx, adapter, _ := prepareCouchDB(t)
+
+	cleanupTestHelper(t, ctx, adapter)
 }

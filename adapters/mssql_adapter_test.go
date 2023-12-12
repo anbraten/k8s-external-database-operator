@@ -9,7 +9,7 @@ import (
 	"github.com/anbraten/k8s-external-database-operator/adapters"
 )
 
-func TestMsSqlDB(t *testing.T) {
+func prepareMsSqlDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, ClientConnectTest) {
 	databaseHost := "localhost"
 	databasePort := "1433"
 
@@ -32,5 +32,17 @@ func TestMsSqlDB(t *testing.T) {
 		return err
 	}
 
+	return ctx, adapter, clientConnectTest
+}
+
+func TestMsSqlDB(t *testing.T) {
+	ctx, adapter, clientConnectTest := prepareMsSqlDB(t)
+
 	testHelper(t, ctx, adapter, clientConnectTest)
+}
+
+func TestMsSqlDBCleanup(t *testing.T) {
+	ctx, adapter, _ := prepareMsSqlDB(t)
+
+	cleanupTestHelper(t, ctx, adapter)
 }

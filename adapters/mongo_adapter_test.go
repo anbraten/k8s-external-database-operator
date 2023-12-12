@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func TestMongoDB(t *testing.T) {
+func prepareMongoDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, ClientConnectTest) {
 	databaseHost := "localhost"
 	databasePort := "27017"
 
@@ -34,5 +34,17 @@ func TestMongoDB(t *testing.T) {
 		return err
 	}
 
+	return ctx, adapter, clientConnectTest
+}
+
+func TestMongoDB(t *testing.T) {
+	ctx, adapter, clientConnectTest := prepareMongoDB(t)
+
 	testHelper(t, ctx, adapter, clientConnectTest)
+}
+
+func TestMongoDBCleanup(t *testing.T) {
+	ctx, adapter, _ := prepareMongoDB(t)
+
+	cleanupTestHelper(t, ctx, adapter)
 }

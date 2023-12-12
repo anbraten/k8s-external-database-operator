@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-func TestPostgresDB(t *testing.T) {
+func preparePostgresDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, ClientConnectTest) {
 	databaseHost := "localhost"
 	databasePort := "5432"
 
@@ -32,5 +32,17 @@ func TestPostgresDB(t *testing.T) {
 		return err
 	}
 
+	return ctx, adapter, clientConnectTest
+}
+
+func TestPostgresDB(t *testing.T) {
+	ctx, adapter, clientConnectTest := preparePostgresDB(t)
+
 	testHelper(t, ctx, adapter, clientConnectTest)
+}
+
+func TestPostgresDBCleanup(t *testing.T) {
+	ctx, adapter, _ := preparePostgresDB(t)
+
+	cleanupTestHelper(t, ctx, adapter)
 }
