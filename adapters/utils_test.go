@@ -69,4 +69,7 @@ func cleanupTestHelper(t *testing.T, ctx context.Context, adapter adapters.Datab
 	if result {
 		t.Fatalf("database and user existing but expecting to be non-existing")
 	}
+	
+	// TODO: test db.DeleteDatabaseUser
+	// TODO: test db.DeleteDatabase
 }
