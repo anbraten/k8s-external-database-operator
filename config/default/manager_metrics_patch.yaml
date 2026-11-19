@@ -1,0 +1,5 @@
+# Expose the metrics endpoint via HTTPS on port 8443. Requests are authenticated
+# and authorized by the manager itself (see --metrics-secure in main.go).
+- op: add
+  path: /spec/template/spec/containers/0/args/0
+  value: --metrics-bind-address=:8443

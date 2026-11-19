@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/anbraten/k8s-external-database-operator/adapters"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 func preparePostgresDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, ClientConnectTest) {

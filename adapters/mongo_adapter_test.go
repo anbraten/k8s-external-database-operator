@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/anbraten/k8s-external-database-operator/adapters"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 func prepareMongoDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, ClientConnectTest) {
@@ -24,7 +24,7 @@ func prepareMongoDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, Cl
 	clientConnectTest := func(ctx context.Context, databaseName string, databaseUsername string, databasePassword string) error {
 		url := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", databaseUsername, databasePassword, databaseHost, databasePort, databaseName)
 		clientOpts := options.Client().ApplyURI(url)
-		client, err := mongo.Connect(ctx, clientOpts)
+		client, err := mongo.Connect(clientOpts)
 		if err != nil {
 			return err
 		}

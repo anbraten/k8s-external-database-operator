@@ -26,7 +26,7 @@ func prepareCouchDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, Cl
 		if err != nil {
 			return err
 		}
-		defer client.Close(ctx)
+		defer client.Close()
 
 		_, _, err = client.DB(databaseName).CreateDoc(ctx, map[string]interface{}{"test": "test"})
 		return err

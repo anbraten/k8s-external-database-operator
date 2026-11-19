@@ -1,51 +1,77 @@
-version: '3'
-
 services:
   couchdb:
-    image: couchdb:2.3.1
+    image: couchdb:3.5
     ports:
       - 5984:5984
     environment:
       COUCHDB_USER: admin
       COUCHDB_PASSWORD: "pA_sw0rd"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5984/_up"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   mongodb:
-    image: mongo:4.4.12
+    image: mongo:8.0
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: "pA_sw0rd"
     ports:
       - 27017:27017
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   mongo-express:
-      image: mongo-express
-      ports:
-        - 8081:8081
-      environment:
-        ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-        ME_CONFIG_MONGODB_ADMINPASSWORD: "pA_sw0rd"
-        ME_CONFIG_MONGODB_SERVER: mongodb
-      depends_on:
-        - mongodb
+    image: mongo-express:1
+    profiles: ["tools"]
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: "pA_sw0rd"
+      ME_CONFIG_MONGODB_SERVER: mongodb
+    depends_on:
+      - mongodb
 
   mysql:
-    image: mysql:8.0
+    image: mysql:8.4
     ports:
       - 3306:3306
     environment:
       MYSQL_ROOT_PASSWORD: "pA_sw0rd"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-ppA_sw0rd"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   postgres:
-    image: postgres:14.2
+    image: postgres:18
     ports:
       - 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: "pA_sw0rd"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   mssql:
-    image: mcr.microsoft.com/mssql/server:latest
+    image: mcr.microsoft.com/mssql/server:2022-latest
     ports:
       - 1433:1433
     environment:
-      ACCEPT_EULA: Y
-      SA_PASSWORD: "pA_sw0rd"
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "pA_sw0rd"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'pA_sw0rd' -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s

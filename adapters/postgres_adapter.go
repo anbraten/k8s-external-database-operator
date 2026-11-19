@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 type postgresAdapter struct {
@@ -65,19 +65,26 @@ func (adapter postgresAdapter) CreateDatabaseUser(ctx context.Context, database 
 
 	query = fmt.Sprintf("GRANT ALL PRIVILEGES ON DATABASE \"%s\" TO \"%s\";", database, username)
 	_, err = adapter.db.Exec(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	// Since PostgreSQL 15 the CREATE privilege on the public schema is no longer granted to
+	// all users by default, so it has to be granted explicitly inside the new database.
+	conn, err := adapter.connectToDatabase(ctx, database)
+	if err != nil {
+		return err
+	}
+	defer conn.Close(ctx)
+
+	query = fmt.Sprintf("GRANT ALL ON SCHEMA public TO \"%s\";", username)
+	_, err = conn.Exec(ctx, query)
 
 	return err
 }
 
 func (adapter postgresAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
-	config := adapter.db.Config()
-	rootUser := config.User
-	rootPassword := config.Password
-	host := config.Host
-	port := config.Port
-	// TODO: find prettier way to generate url from original url string
-	url := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", rootUser, rootPassword, host, port, database)
-	conn, err := pgx.Connect(ctx, url)
+	conn, err := adapter.connectToDatabase(ctx, database)
 	if err != nil {
 		return err
 	}
@@ -98,6 +105,14 @@ func (adapter postgresAdapter) DeleteDatabaseUser(ctx context.Context, database 
 	query = fmt.Sprintf("DROP USER \"%s\";", username)
 	_, err = adapter.db.Exec(ctx, query)
 	return err
+}
+
+// connectToDatabase opens a new connection with the same settings (host, credentials, TLS, ...)
+// as the admin connection, but to the given database.
+func (adapter postgresAdapter) connectToDatabase(ctx context.Context, database string) (*pgx.Conn, error) {
+	config := adapter.db.Config().Copy()
+	config.Database = database
+	return pgx.ConnectConfig(ctx, config)
 }
 
 func (adapter postgresAdapter) Close(ctx context.Context) error {
