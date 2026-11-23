@@ -1,6 +1,10 @@
 package adapters
 
-import "context"
+import (
+	"context"
+
+	"github.com/anbraten/k8s-external-database-operator/api/v1alpha1"
+)
 
 type DatabaseAdapter interface {
 	HasDatabase(ctx context.Context, database string) (bool, error)
@@ -12,9 +16,9 @@ type DatabaseAdapter interface {
 	Close(ctx context.Context) error
 }
 
-// ExtensionAdapter is implemented by adapters of databases supporting extensions (postgres).
-type ExtensionAdapter interface {
-	// EnsureExtensions creates all given extensions in the database which do not exist yet.
-	// Existing extensions which are not part of the list are kept.
-	EnsureExtensions(ctx context.Context, database string, extensions []string) error
+// SpecificSpecAdapter is implemented by adapters supporting settings which are specific to their
+// database type (e.g. spec.postgres). ApplyAdapterSpecificSpec is called on every reconcile after
+// the database and user have been created, so it has to be idempotent.
+type SpecificSpecAdapter interface {
+	ApplyAdapterSpecificSpec(ctx context.Context, spec v1alpha1.DatabaseSpec) error
 }

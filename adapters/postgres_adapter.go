@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+
+	"github.com/anbraten/k8s-external-database-operator/api/v1alpha1"
 )
 
 type postgresAdapter struct {
@@ -135,10 +137,20 @@ func (adapter postgresAdapter) DeleteDatabaseUser(ctx context.Context, database 
 	return err
 }
 
-// EnsureExtensions creates the given extensions in the database. Extensions are created by the admin
-// user of the operator, as most extensions (e.g. vector) are not trusted and therefore can't be
-// created by the database user itself.
-func (adapter postgresAdapter) EnsureExtensions(ctx context.Context, database string, extensions []string) error {
+// ApplyAdapterSpecificSpec applies the settings of spec.postgres to the database.
+func (adapter postgresAdapter) ApplyAdapterSpecificSpec(ctx context.Context, spec v1alpha1.DatabaseSpec) error {
+	if spec.Postgres == nil {
+		return nil
+	}
+
+	return adapter.ensureExtensions(ctx, spec.Database, spec.Postgres.Extensions)
+}
+
+// ensureExtensions creates the given extensions in the database which do not exist yet. Existing
+// extensions which are not part of the list are kept. Extensions are created by the admin user of
+// the operator, as most extensions (e.g. vector) are not trusted and therefore can't be created by
+// the database user itself.
+func (adapter postgresAdapter) ensureExtensions(ctx context.Context, database string, extensions []string) error {
 	if len(extensions) == 0 {
 		return nil
 	}

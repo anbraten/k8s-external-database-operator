@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/anbraten/k8s-external-database-operator/adapters"
+	"github.com/anbraten/k8s-external-database-operator/api/v1alpha1"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -126,15 +127,22 @@ func TestPostgresRepairsUserWithoutSchemaPrivileges(t *testing.T) {
 	}
 }
 
-func TestPostgresEnsureExtensions(t *testing.T) {
+func TestPostgresApplyAdapterSpecificSpecExtensions(t *testing.T) {
 	ctx, adapter, _ := preparePostgresDB(t)
 	databaseName := "extension-db_123"
 	databaseUsername := "extension-user_123"
 	databasePassword := "top_secret-123!"
 
-	extensionAdapter, ok := adapter.(adapters.ExtensionAdapter)
+	specificSpecAdapter, ok := adapter.(adapters.SpecificSpecAdapter)
 	if !ok {
-		t.Fatalf("Expected postgres adapter to support extensions")
+		t.Fatalf("Expected postgres adapter to support adapter specific settings")
+	}
+	applyExtensions := func(extensions ...string) error {
+		return specificSpecAdapter.ApplyAdapterSpecificSpec(ctx, v1alpha1.DatabaseSpec{
+			Type:     "postgres",
+			Database: databaseName,
+			Postgres: &v1alpha1.PostgresSpec{Extensions: extensions},
+		})
 	}
 
 	t.Cleanup(func() {
@@ -164,9 +172,14 @@ func TestPostgresEnsureExtensions(t *testing.T) {
 		t.Fatalf("Expected database user to be unable to create the vector extension")
 	}
 
+	// no postgres settings is a no-op
+	if err := specificSpecAdapter.ApplyAdapterSpecificSpec(ctx, v1alpha1.DatabaseSpec{Type: "postgres", Database: databaseName}); err != nil {
+		t.Fatalf("Error applying empty postgres settings: %s", err)
+	}
+
 	// called twice to check idempotency
 	for i := 0; i < 2; i++ {
-		if err := extensionAdapter.EnsureExtensions(ctx, databaseName, []string{"vector", "pg_trgm"}); err != nil {
+		if err := applyExtensions("vector", "pg_trgm"); err != nil {
 			t.Fatalf("Error ensuring extensions (run %d): %s", i+1, err)
 		}
 	}
@@ -187,13 +200,13 @@ func TestPostgresEnsureExtensions(t *testing.T) {
 	}
 
 	// extensions which aren't installed on the server are reported
-	err = extensionAdapter.EnsureExtensions(ctx, databaseName, []string{"does_not_exist"})
+	err = applyExtensions("does_not_exist")
 	if err == nil || !strings.Contains(err.Error(), "not installed") {
 		t.Fatalf("Expected error for missing extension, got: %v", err)
 	}
 
 	// invalid extension names are rejected
-	if err := extensionAdapter.EnsureExtensions(ctx, databaseName, []string{`vector"; DROP DATABASE postgres; --`}); err == nil {
+	if err := applyExtensions(`vector"; DROP DATABASE postgres; --`); err == nil {
 		t.Fatalf("Expected error for invalid extension name")
 	}
 }
