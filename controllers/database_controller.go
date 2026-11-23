@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -20,8 +22,11 @@ import (
 // DatabaseReconciler reconciles a Database object
 type DatabaseReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	// APIReader reads directly from the API server. It is used for secrets so the
+	// operator doesn't need to list, watch and cache all secrets of the cluster.
+	APIReader client.Reader
+	Log       logr.Logger
+	Scheme    *runtime.Scheme
 }
 
 const databaseFinalizer = "finalizer.database.anbraten.github.io"
@@ -29,6 +34,7 @@ const databaseFinalizer = "finalizer.database.anbraten.github.io"
 //+kubebuilder:rbac:groups=anbraten.github.io,resources=databases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=anbraten.github.io,resources=databases/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=anbraten.github.io,resources=databases/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -141,7 +147,13 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	} else if !hasDatabaseUserWithAccess {
 		log.Info("Creating new user and granting access to database")
 
-		err = db.CreateDatabaseUser(ctx, database.Spec.Database, database.Spec.Username, database.Spec.Password)
+		password, err := r.getPassword(ctx, database)
+		if err != nil {
+			log.Error(err, "Can't load password of database user")
+			return ctrl.Result{}, err
+		}
+
+		err = db.CreateDatabaseUser(ctx, database.Spec.Database, database.Spec.Username, password)
 		if err != nil {
 			log.Error(err, "Can't create database user with access to database")
 			return ctrl.Result{}, err
@@ -150,6 +162,33 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// getPassword returns the password of the database user, either set directly
+// or loaded from the referenced secret in the namespace of the database.
+func (r *DatabaseReconciler) getPassword(ctx context.Context, database *anbratengithubiov1alpha1.Database) (string, error) {
+	ref := database.Spec.PasswordSecretRef
+	if ref == nil {
+		if database.Spec.Password == "" {
+			return "", fmt.Errorf("neither password nor passwordSecretRef is set")
+		}
+		return database.Spec.Password, nil
+	}
+
+	secret := &corev1.Secret{}
+	if err := r.APIReader.Get(ctx, types.NamespacedName{Namespace: database.Namespace, Name: ref.Name}, secret); err != nil {
+		return "", fmt.Errorf("failed to get secret '%s': %w", ref.Name, err)
+	}
+
+	password, ok := secret.Data[ref.Key]
+	if !ok {
+		return "", fmt.Errorf("secret '%s' has no key '%s'", ref.Name, ref.Key)
+	}
+	if len(password) == 0 {
+		return "", fmt.Errorf("key '%s' of secret '%s' is empty", ref.Key, ref.Name)
+	}
+
+	return string(password), nil
 }
 
 func (r *DatabaseReconciler) getDatabaseConnection(ctx context.Context, databaseType string) (adapters.DatabaseAdapter, error) {

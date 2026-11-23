@@ -9,6 +9,13 @@ It will automatically handle creation, updates & removal of your external databa
 This can be done with the following manifest:
 
 ```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: guestbook-database
+stringData:
+  password: iwonttellyou
+---
 apiVersion: anbraten.github.io/v1alpha1
 kind: Database
 metadata:
@@ -17,8 +24,14 @@ spec:
   type: mongo
   database: guestbook
   username: guestbook-admin
-  password: iwonttellyou
+  passwordSecretRef:
+    name: guestbook-database
+    key: password
 ```
+
+The secret has to be in the same namespace as the `Database`, so your application can use the same secret to connect to the database.
+The password is only used when the user is created: changing it later (in the secret or in the `Database`) does not update the password of an existing user.
+Alternatively, the password can be set directly using `password: iwonttellyou`, but then everyone who can read the `Database` resource can read the password as well.
 
 > Important note: :rotating_light: Changing database settings (`type`, `database`, `username`, `password`) will possibly re-create the corresponding data and wont migrate the database or user (data-loss of old database & custom user settings).
 
