@@ -3,6 +3,8 @@ package adapters_test
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/url"
 	"testing"
 
 	"github.com/anbraten/k8s-external-database-operator/adapters"
@@ -14,15 +16,21 @@ func preparePostgresDB(t *testing.T) (context.Context, adapters.DatabaseAdapter,
 	databasePort := "5432"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("postgres://%s:%s@%s:%s?sslmode=disable", "postgres", "pA_sw0rd", databaseHost, databasePort)
-	adapter, err := adapters.GetPostgresConnection(ctx, url)
+	adminURL := fmt.Sprintf("postgres://%s:%s@%s:%s?sslmode=disable", "postgres", "pA_sw0rd", databaseHost, databasePort)
+	adapter, err := adapters.GetPostgresConnection(ctx, adminURL)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)
 	}
 
 	clientConnectTest := func(ctx context.Context, databaseName string, databaseUsername string, databasePassword string) error {
-		url := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", databaseUsername, databasePassword, databaseHost, databasePort, databaseName)
-		client, err := pgx.Connect(ctx, url)
+		dsn := url.URL{
+			Scheme:   "postgres",
+			User:     url.UserPassword(databaseUsername, databasePassword),
+			Host:     net.JoinHostPort(databaseHost, databasePort),
+			Path:     databaseName,
+			RawQuery: "sslmode=disable",
+		}
+		client, err := pgx.Connect(ctx, dsn.String())
 		if err != nil {
 			return err
 		}

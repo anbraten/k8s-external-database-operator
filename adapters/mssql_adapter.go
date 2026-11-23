@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	_ "github.com/microsoft/go-mssqldb"
 )
@@ -60,7 +61,7 @@ func (adapter mssqlAdapter) HasDatabaseUserWithAccess(ctx context.Context, datab
 
 func (adapter mssqlAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
 	// make password sql safe
-	quotedPassword := QuoteLiteral(password)
+	quotedPassword := quoteMssqlLiteral(password)
 	query := fmt.Sprintf("USE [%s]; CREATE USER [%s] WITH PASSWORD=%s", database, username, quotedPassword)
 	_, err := adapter.db.ExecContext(ctx, query)
 	if err != nil {
@@ -76,6 +77,13 @@ func (adapter mssqlAdapter) DeleteDatabaseUser(ctx context.Context, database str
 	query := fmt.Sprintf("USE [%s]; DROP USER [%s];", database, username)
 	_, err := adapter.db.ExecContext(ctx, query)
 	return err
+}
+
+// quoteMssqlLiteral quotes a string literal to be used inside a MS-SQL statement.
+// Single quotes are doubled, backslashes have no special meaning. The literal is
+// prefixed with N to support unicode characters.
+func quoteMssqlLiteral(literal string) string {
+	return `N'` + strings.ReplaceAll(literal, `'`, `''`) + `'`
 }
 
 func (adapter mssqlAdapter) Close(ctx context.Context) error {

@@ -3,6 +3,8 @@ package adapters_test
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/url"
 	"testing"
 
 	"github.com/anbraten/k8s-external-database-operator/adapters"
@@ -15,15 +17,20 @@ func prepareMongoDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, Cl
 	databasePort := "27017"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("mongodb://%s:%s@%s:%s/?authSource=admin", "admin", "pA_sw0rd", databaseHost, databasePort)
-	adapter, err := adapters.GetMongoConnection(ctx, url)
+	adminURL := fmt.Sprintf("mongodb://%s:%s@%s:%s/?authSource=admin", "admin", "pA_sw0rd", databaseHost, databasePort)
+	adapter, err := adapters.GetMongoConnection(ctx, adminURL)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)
 	}
 
 	clientConnectTest := func(ctx context.Context, databaseName string, databaseUsername string, databasePassword string) error {
-		url := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", databaseUsername, databasePassword, databaseHost, databasePort, databaseName)
-		clientOpts := options.Client().ApplyURI(url)
+		dsn := url.URL{
+			Scheme: "mongodb",
+			User:   url.UserPassword(databaseUsername, databasePassword),
+			Host:   net.JoinHostPort(databaseHost, databasePort),
+			Path:   databaseName,
+		}
+		clientOpts := options.Client().ApplyURI(dsn.String())
 		client, err := mongo.Connect(clientOpts)
 		if err != nil {
 			return err

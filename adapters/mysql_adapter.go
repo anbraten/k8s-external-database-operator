@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	// load SQL driver for mysql
 	_ "github.com/go-sql-driver/mysql"
@@ -40,10 +41,18 @@ func (adapter mysqlAdapter) HasDatabaseUserWithAccess(ctx context.Context, datab
 }
 
 func (adapter mysqlAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
+	// whether backslashes are escape characters depends on the sql mode of the server
+	var sqlMode string
+	err := adapter.db.QueryRowContext(ctx, "SELECT @@SESSION.sql_mode;").Scan(&sqlMode)
+	if err != nil {
+		return err
+	}
+	noBackslashEscapes := strings.Contains(sqlMode, "NO_BACKSLASH_ESCAPES")
+
 	// make password sql safe
-	quotedPassword := QuoteLiteral(password)
+	quotedPassword := quoteMysqlLiteral(password, noBackslashEscapes)
 	query := fmt.Sprintf("CREATE USER `%s`@'%%' IDENTIFIED BY %s;", username, quotedPassword)
-	_, err := adapter.db.ExecContext(ctx, query)
+	_, err = adapter.db.ExecContext(ctx, query)
 	if err != nil {
 		return err
 	}
@@ -62,6 +71,19 @@ func (adapter mysqlAdapter) DeleteDatabaseUser(ctx context.Context, database str
 	query := fmt.Sprintf("DROP USER '%s';", username)
 	_, err := adapter.db.ExecContext(ctx, query)
 	return err
+}
+
+// quoteMysqlLiteral quotes a string literal to be used inside a MySQL statement.
+// Single quotes are doubled. Backslashes are an escape character in MySQL strings
+// and are therefore escaped as well, unless the server runs with the
+// NO_BACKSLASH_ESCAPES sql mode in which they are ordinary characters.
+func quoteMysqlLiteral(literal string, noBackslashEscapes bool) string {
+	if !noBackslashEscapes {
+		literal = strings.ReplaceAll(literal, `\`, `\\`)
+	}
+	literal = strings.ReplaceAll(literal, `'`, `''`)
+
+	return `'` + literal + `'`
 }
 
 func (adapter mysqlAdapter) Close(ctx context.Context) error {

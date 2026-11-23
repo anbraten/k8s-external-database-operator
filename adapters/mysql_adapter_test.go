@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net"
 	"testing"
 
 	"github.com/anbraten/k8s-external-database-operator/adapters"
+	"github.com/go-sql-driver/mysql"
 )
 
 func prepareMySqlDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, ClientConnectTest) {
@@ -14,15 +16,20 @@ func prepareMySqlDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, Cl
 	databasePort := "3306"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("%s:%s@tcp(%s:%s)/", "root", "pA_sw0rd", databaseHost, databasePort)
-	adapter, err := adapters.GetMysqlConnection(ctx, url)
+	adminURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/", "root", "pA_sw0rd", databaseHost, databasePort)
+	adapter, err := adapters.GetMysqlConnection(ctx, adminURL)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)
 	}
 
 	clientConnectTest := func(ctx context.Context, databaseName string, databaseUsername string, databasePassword string) error {
-		url := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", databaseUsername, databasePassword, databaseHost, databasePort, databaseName)
-		client, err := sql.Open("mysql", url)
+		config := mysql.NewConfig()
+		config.User = databaseUsername
+		config.Passwd = databasePassword
+		config.Net = "tcp"
+		config.Addr = net.JoinHostPort(databaseHost, databasePort)
+		config.DBName = databaseName
+		client, err := sql.Open("mysql", config.FormatDSN())
 		if err != nil {
 			return err
 		}

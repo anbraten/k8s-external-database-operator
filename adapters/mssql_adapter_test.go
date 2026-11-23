@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net"
+	"net/url"
 	"testing"
 
 	"github.com/anbraten/k8s-external-database-operator/adapters"
@@ -14,15 +16,20 @@ func prepareMsSqlDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, Cl
 	databasePort := "1433"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("sqlserver://%s:%s@%s:%s", "sa", "pA_sw0rd", databaseHost, databasePort)
-	adapter, err := adapters.GetMssqlConnection(ctx, url)
+	adminURL := fmt.Sprintf("sqlserver://%s:%s@%s:%s", "sa", "pA_sw0rd", databaseHost, databasePort)
+	adapter, err := adapters.GetMssqlConnection(ctx, adminURL)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)
 	}
 
 	clientConnectTest := func(ctx context.Context, databaseName string, databaseUsername string, databasePassword string) error {
-		url := fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s", databaseUsername, databasePassword, databaseHost, databasePort, databaseName)
-		client, err := sql.Open("sqlserver", url)
+		dsn := url.URL{
+			Scheme:   "sqlserver",
+			User:     url.UserPassword(databaseUsername, databasePassword),
+			Host:     net.JoinHostPort(databaseHost, databasePort),
+			RawQuery: url.Values{"database": {databaseName}}.Encode(),
+		}
+		client, err := sql.Open("sqlserver", dsn.String())
 		if err != nil {
 			return err
 		}

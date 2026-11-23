@@ -3,6 +3,7 @@ package adapters
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -86,7 +87,7 @@ func (adapter postgresAdapter) CreateDatabaseUser(ctx context.Context, database 
 
 	if !roleExists {
 		// make password sql safe
-		quotedPassword := QuoteLiteral(password)
+		quotedPassword := quotePostgresLiteral(password)
 		query := fmt.Sprintf("CREATE USER \"%s\" WITH PASSWORD %s", username, quotedPassword)
 		_, err = adapter.db.Exec(ctx, query)
 		if err != nil {
@@ -146,6 +147,20 @@ func (adapter postgresAdapter) connectToDatabase(ctx context.Context, database s
 	config := adapter.db.Config().Copy()
 	config.Database = database
 	return pgx.ConnectConfig(ctx, config)
+}
+
+// quotePostgresLiteral quotes a string literal to be used inside a PostgreSQL statement.
+// Single quotes are doubled. If the literal contains backslashes they are
+// escaped as well and the literal is prefixed with E (postgres escape string syntax).
+// Behaves the same as pq.QuoteLiteral from github.com/lib/pq.
+func quotePostgresLiteral(literal string) string {
+	literal = strings.ReplaceAll(literal, `'`, `''`)
+	if strings.Contains(literal, `\`) {
+		literal = strings.ReplaceAll(literal, `\`, `\\`)
+		return ` E'` + literal + `'`
+	}
+
+	return `'` + literal + `'`
 }
 
 func (adapter postgresAdapter) Close(ctx context.Context) error {

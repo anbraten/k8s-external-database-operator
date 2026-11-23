@@ -3,6 +3,8 @@ package adapters_test
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/url"
 	"testing"
 
 	"github.com/anbraten/k8s-external-database-operator/adapters"
@@ -14,15 +16,19 @@ func prepareCouchDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, Cl
 	databasePort := "5984"
 
 	ctx := context.Background()
-	url := fmt.Sprintf("http://%s:%s@%s:%s", "admin", "pA_sw0rd", databaseHost, databasePort)
-	adapter, err := adapters.GetCouchdbConnection(ctx, url)
+	adminURL := fmt.Sprintf("http://%s:%s@%s:%s", "admin", "pA_sw0rd", databaseHost, databasePort)
+	adapter, err := adapters.GetCouchdbConnection(ctx, adminURL)
 	if err != nil {
 		t.Fatalf("Error opening database connection: %s", err)
 	}
 
 	clientConnectTest := func(ctx context.Context, databaseName string, databaseUsername string, databasePassword string) error {
-		url := fmt.Sprintf("http://%s:%s@%s:%s", databaseUsername, databasePassword, databaseHost, databasePort)
-		client, err := kivik.New("couch", url)
+		dsn := url.URL{
+			Scheme: "http",
+			User:   url.UserPassword(databaseUsername, databasePassword),
+			Host:   net.JoinHostPort(databaseHost, databasePort),
+		}
+		client, err := kivik.New("couch", dsn.String())
 		if err != nil {
 			return err
 		}
