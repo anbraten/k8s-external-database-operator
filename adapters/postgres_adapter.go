@@ -33,37 +33,68 @@ func (adapter postgresAdapter) DeleteDatabase(ctx context.Context, database stri
 	return err
 }
 
+// HasDatabaseUserWithAccess checks that the user exists and has all privileges granted by
+// CreateDatabaseUser. Checking the schema privileges (and not only CONNECT, which is granted to
+// PUBLIC by default) ensures that users missing them, e.g. users created by older versions of
+// this operator on PostgreSQL >= 15, are detected and repaired by CreateDatabaseUser.
 func (adapter postgresAdapter) HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error) {
-	var count int
-	query := fmt.Sprintf("SELECT COUNT(*) FROM pg_roles WHERE rolname='%s';", username)
-	err := adapter.db.QueryRow(ctx, query).Scan(&count)
-	if err != nil {
-		return false, err
-	}
-	if count == 0 {
-		return false, nil
-	}
-
-	var hasPrivilege bool
-	query = fmt.Sprintf("SELECT has_database_privilege('%s', '%s', 'CONNECT');", username, database)
-	err = adapter.db.QueryRow(ctx, query).Scan(&hasPrivilege)
-	if err != nil {
+	roleExists, err := adapter.roleExists(ctx, username)
+	if err != nil || !roleExists {
 		return false, err
 	}
 
-	return hasPrivilege, nil
+	dbExists, err := adapter.HasDatabase(ctx, database)
+	if err != nil || !dbExists {
+		return false, err
+	}
+
+	var hasDatabasePrivileges bool
+	err = adapter.db.QueryRow(ctx,
+		"SELECT has_database_privilege($1, $2, 'CONNECT') AND has_database_privilege($1, $2, 'CREATE') AND has_database_privilege($1, $2, 'TEMPORARY');",
+		username, database).Scan(&hasDatabasePrivileges)
+	if err != nil || !hasDatabasePrivileges {
+		return false, err
+	}
+
+	// schema privileges can only be checked from inside the database
+	conn, err := adapter.connectToDatabase(ctx, database)
+	if err != nil {
+		return false, err
+	}
+	defer conn.Close(ctx)
+
+	var hasSchemaPrivileges bool
+	err = conn.QueryRow(ctx,
+		"SELECT has_schema_privilege($1, 'public', 'USAGE') AND has_schema_privilege($1, 'public', 'CREATE');",
+		username).Scan(&hasSchemaPrivileges)
+	if err != nil {
+		return false, err
+	}
+
+	return hasSchemaPrivileges, nil
 }
 
+// CreateDatabaseUser creates the user (if it doesn't exist yet) and grants it all privileges on
+// the database. All steps are idempotent, so a partially failed run is completed by the next
+// reconcile and existing users with missing privileges are repaired.
+// The password of an already existing user is not changed.
 func (adapter postgresAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
-	// make password sql safe
-	quotedPassword := QuoteLiteral(password)
-	query := fmt.Sprintf("CREATE USER \"%s\" WITH PASSWORD %s", username, quotedPassword)
-	_, err := adapter.db.Exec(ctx, query)
+	roleExists, err := adapter.roleExists(ctx, username)
 	if err != nil {
 		return err
 	}
 
-	query = fmt.Sprintf("GRANT ALL PRIVILEGES ON DATABASE \"%s\" TO \"%s\";", database, username)
+	if !roleExists {
+		// make password sql safe
+		quotedPassword := QuoteLiteral(password)
+		query := fmt.Sprintf("CREATE USER \"%s\" WITH PASSWORD %s", username, quotedPassword)
+		_, err = adapter.db.Exec(ctx, query)
+		if err != nil {
+			return err
+		}
+	}
+
+	query := fmt.Sprintf("GRANT ALL PRIVILEGES ON DATABASE \"%s\" TO \"%s\";", database, username)
 	_, err = adapter.db.Exec(ctx, query)
 	if err != nil {
 		return err
@@ -105,6 +136,12 @@ func (adapter postgresAdapter) DeleteDatabaseUser(ctx context.Context, database 
 	query = fmt.Sprintf("DROP USER \"%s\";", username)
 	_, err = adapter.db.Exec(ctx, query)
 	return err
+}
+
+func (adapter postgresAdapter) roleExists(ctx context.Context, username string) (bool, error) {
+	var exists bool
+	err := adapter.db.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = $1);", username).Scan(&exists)
+	return exists, err
 }
 
 // connectToDatabase opens a new connection with the same settings (host, credentials, TLS, ...)
