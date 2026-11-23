@@ -121,14 +121,10 @@ func (adapter postgresAdapter) DeleteDatabaseUser(ctx context.Context, database 
 	}
 	defer conn.Close(ctx)
 
+	// Drops all objects owned by the user in the database and revokes all privileges granted to it
+	// on objects in this database and on shared objects (like the database itself).
 	query := fmt.Sprintf("DROP OWNED BY \"%s\";", username)
 	_, err = conn.Exec(ctx, query)
-	if err != nil {
-		return err
-	}
-
-	query = fmt.Sprintf("REVOKE ALL PRIVILEGES ON DATABASE \"%s\" FROM \"%s\"; REVOKE ALL ON SCHEMA public FROM \"%s\";", database, username, username)
-	_, err = adapter.db.Exec(ctx, query)
 	if err != nil {
 		return err
 	}
