@@ -41,6 +41,10 @@ type DatabaseSpec struct {
 type DatabaseStatus struct {
 	// Has database been created?
 	Created bool `json:"created"`
+
+	// Identifies the password which has been applied to the database user last
+	// (source and its version, not the password itself). Used to detect password changes.
+	PasswordVersion string `json:"passwordVersion,omitempty"`
 }
 
 //+kubebuilder:object:root=true

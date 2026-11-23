@@ -73,6 +73,12 @@ func (adapter mssqlAdapter) CreateDatabaseUser(ctx context.Context, database str
 	return err
 }
 
+func (adapter mssqlAdapter) UpdateDatabaseUserPassword(ctx context.Context, database string, username string, password string) error {
+	query := fmt.Sprintf("USE [%s]; ALTER USER [%s] WITH PASSWORD=%s;", database, username, quoteMssqlLiteral(password))
+	_, err := adapter.db.ExecContext(ctx, query)
+	return err
+}
+
 func (adapter mssqlAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
 	query := fmt.Sprintf("USE [%s]; DROP USER [%s];", database, username)
 	_, err := adapter.db.ExecContext(ctx, query)

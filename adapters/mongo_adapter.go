@@ -63,6 +63,14 @@ func (adapter mongoAdapter) CreateDatabaseUser(ctx context.Context, database str
 			{Key: "roles", Value: []bson.M{{"role": "dbAdmin", "db": database}, {"role": "readWrite", "db": database}}}}).Err()
 }
 
+func (adapter mongoAdapter) UpdateDatabaseUserPassword(ctx context.Context, database string, username string, password string) error {
+	return adapter.client.Database(database).RunCommand(
+		ctx,
+		bson.D{
+			{Key: "updateUser", Value: username},
+			{Key: "pwd", Value: password}}).Err()
+}
+
 func (adapter mongoAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
 	return adapter.client.Database(database).RunCommand(ctx, bson.D{{Key: "dropUser", Value: username}}).Err()
 }

@@ -10,6 +10,8 @@ rules:
   - secrets
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - anbraten.github.io
   resources:

@@ -35,7 +35,7 @@ func prepareMySqlDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, Cl
 		}
 		defer client.Close()
 
-		_, err = client.ExecContext(ctx, "CREATE TABLE test (id int);")
+		_, err = client.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS test (id int);")
 		return err
 	}
 

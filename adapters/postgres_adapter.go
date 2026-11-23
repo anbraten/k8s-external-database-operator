@@ -115,6 +115,12 @@ func (adapter postgresAdapter) CreateDatabaseUser(ctx context.Context, database 
 	return err
 }
 
+func (adapter postgresAdapter) UpdateDatabaseUserPassword(ctx context.Context, database string, username string, password string) error {
+	query := fmt.Sprintf("ALTER USER \"%s\" WITH PASSWORD %s;", username, quotePostgresLiteral(password))
+	_, err := adapter.db.Exec(ctx, query)
+	return err
+}
+
 func (adapter postgresAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
 	conn, err := adapter.connectToDatabase(ctx, database)
 	if err != nil {

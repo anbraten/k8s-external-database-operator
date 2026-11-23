@@ -60,6 +60,28 @@ func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdap
 	} else if !hasDatabaseUserWithAccess {
 		t.Fatalf("Database user does not exists")
 	}
+
+	// when: the password is changed
+	newPassword := `new'secret\456!`
+	err = adapter.UpdateDatabaseUserPassword(ctx, databaseName, databaseUsername, newPassword)
+	if err != nil {
+		t.Fatalf("Error updating password of database user: %s", err)
+	}
+
+	// then: only the new password works
+	if err = clientConnectTest(ctx, databaseName, databaseUsername, newPassword); err != nil {
+		t.Fatalf("Error connecting to database with new password: %s", err)
+	}
+	if err = clientConnectTest(ctx, databaseName, databaseUsername, databasePassword); err == nil {
+		t.Fatalf("Expected old password to be rejected after the update")
+	}
+
+	hasDatabaseUserWithAccess, err = adapter.HasDatabaseUserWithAccess(ctx, databaseName, databaseUsername)
+	if err != nil {
+		t.Fatalf("Error checking database user access after password update: %s", err)
+	} else if !hasDatabaseUserWithAccess {
+		t.Fatalf("Database user lost access after password update")
+	}
 }
 
 func cleanupTestHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdapter) {

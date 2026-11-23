@@ -41,16 +41,11 @@ func (adapter mysqlAdapter) HasDatabaseUserWithAccess(ctx context.Context, datab
 }
 
 func (adapter mysqlAdapter) CreateDatabaseUser(ctx context.Context, database string, username string, password string) error {
-	// whether backslashes are escape characters depends on the sql mode of the server
-	var sqlMode string
-	err := adapter.db.QueryRowContext(ctx, "SELECT @@SESSION.sql_mode;").Scan(&sqlMode)
+	// make password sql safe
+	quotedPassword, err := adapter.quotePassword(ctx, password)
 	if err != nil {
 		return err
 	}
-	noBackslashEscapes := strings.Contains(sqlMode, "NO_BACKSLASH_ESCAPES")
-
-	// make password sql safe
-	quotedPassword := quoteMysqlLiteral(password, noBackslashEscapes)
 	query := fmt.Sprintf("CREATE USER `%s`@'%%' IDENTIFIED BY %s;", username, quotedPassword)
 	_, err = adapter.db.ExecContext(ctx, query)
 	if err != nil {
@@ -65,6 +60,29 @@ func (adapter mysqlAdapter) CreateDatabaseUser(ctx context.Context, database str
 
 	_, err = adapter.db.ExecContext(ctx, "FLUSH PRIVILEGES;")
 	return err
+}
+
+func (adapter mysqlAdapter) UpdateDatabaseUserPassword(ctx context.Context, database string, username string, password string) error {
+	quotedPassword, err := adapter.quotePassword(ctx, password)
+	if err != nil {
+		return err
+	}
+
+	query := fmt.Sprintf("ALTER USER `%s`@'%%' IDENTIFIED BY %s;", username, quotedPassword)
+	_, err = adapter.db.ExecContext(ctx, query)
+	return err
+}
+
+// quotePassword quotes the password according to the sql mode of the server, as
+// it decides whether backslashes are escape characters.
+func (adapter mysqlAdapter) quotePassword(ctx context.Context, password string) (string, error) {
+	var sqlMode string
+	err := adapter.db.QueryRowContext(ctx, "SELECT @@SESSION.sql_mode;").Scan(&sqlMode)
+	if err != nil {
+		return "", err
+	}
+
+	return quoteMysqlLiteral(password, strings.Contains(sqlMode, "NO_BACKSLASH_ESCAPES")), nil
 }
 
 func (adapter mysqlAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {

@@ -30,10 +30,11 @@ spec:
 ```
 
 The secret has to be in the same namespace as the `Database`, so your application can use the same secret to connect to the database.
-The password is only used when the user is created: changing it later (in the secret or in the `Database`) does not update the password of an existing user.
-Alternatively, the password can be set directly using `password: iwonttellyou`, but then everyone who can read the `Database` resource can read the password as well.
+Alternatively, the password can be set directly using `password: iwonttellyou`, but then everyone who can read the `Database` resource can read the password as well. Only one of `password` and `passwordSecretRef` may be set.
 
-> Important note: :rotating_light: Changing database settings (`type`, `database`, `username`, `password`) will possibly re-create the corresponding data and wont migrate the database or user (data-loss of old database & custom user settings).
+Changing the password (in the secret or in the `Database`) updates the password of the database user. Passwords changed directly in the database are overwritten by the operator on the next change of the `Database` or its secret.
+
+> Important note: :rotating_light: Changing database settings (`type`, `database`, `username`) will possibly re-create the corresponding data and wont migrate the database or user (data-loss of old database & custom user settings).
 
 ## Supported database types
 
@@ -64,6 +65,12 @@ kubectl delete --ignore-not-found -n external-database-operator-system configmap
 ```
 
 PostgreSQL users created by older versions on PostgreSQL >= 15 are missing the privileges on the `public` schema. They are repaired automatically on the next reconcile after the upgrade.
+
+### Password management
+
+The operator now updates the password of existing database users if it changes. After the upgrade, the password of every existing user is set once to the password configured in its `Database` (users of `Database` resources without a password are left untouched). If you changed passwords directly in the database or changed the `password` of a `Database` (which older versions ignored), make sure the configured password is the one you want before upgrading.
+
+The operator needs `get`, `list` and `watch` permissions on secrets to read the passwords referenced by `passwordSecretRef` and to react to changes. Only the metadata of secrets is cached.
 
 ## Metrics
 

@@ -8,6 +8,8 @@ type DatabaseAdapter interface {
 	DeleteDatabase(ctx context.Context, database string) error
 	HasDatabaseUserWithAccess(ctx context.Context, database string, username string) (bool, error)
 	CreateDatabaseUser(ctx context.Context, database string, username string, password string) error
+	// UpdateDatabaseUserPassword sets the password of an existing user created by CreateDatabaseUser
+	UpdateDatabaseUserPassword(ctx context.Context, database string, username string, password string) error
 	DeleteDatabaseUser(ctx context.Context, database string, username string) error
 	Close(ctx context.Context) error
 }

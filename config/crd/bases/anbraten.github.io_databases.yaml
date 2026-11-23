@@ -80,6 +80,11 @@ spec:
               created:
                 description: Has database been created?
                 type: boolean
+              passwordVersion:
+                description: |-
+                  Identifies the password which has been applied to the database user last
+                  (source and its version, not the password itself). Used to detect password changes.
+                type: string
             required:
             - created
             type: object
