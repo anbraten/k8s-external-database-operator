@@ -45,15 +45,32 @@ spec:
               password:
                 description: Password of the database user
                 type: string
+              postgres:
+                description: Postgres specific settings (only allowed if type is postgres)
+                properties:
+                  extensions:
+                    description: |-
+                      Extensions which will be created in the database (e.g. vector, postgis, pg_trgm).
+                      The extensions have to be installed on the postgres server.
+                      Extensions removed from this list are not dropped from the database, as this would delete all data using them.
+                    items:
+                      pattern: ^[a-zA-Z0-9]+?[a-zA-Z0-9_-]*?$
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                type: object
               type:
                 description: 'Type of the database. (currently supported: mysql, couchdb,
-                  mongo, postgres)'
+                  mongo, postgres, mssql)'
                 type: string
               username:
                 description: Username of the database user which will have full access
                   to this database
                 type: string
             type: object
+            x-kubernetes-validations:
+            - message: postgres can only be set if type is postgres
+              rule: '!has(self.postgres) || (has(self.type) && self.type == ''postgres'')'
           status:
             description: DatabaseStatus defines the observed state of Database
             properties:

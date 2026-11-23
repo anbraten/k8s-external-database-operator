@@ -11,3 +11,10 @@ type DatabaseAdapter interface {
 	DeleteDatabaseUser(ctx context.Context, database string, username string) error
 	Close(ctx context.Context) error
 }
+
+// ExtensionAdapter is implemented by adapters of databases supporting extensions (postgres).
+type ExtensionAdapter interface {
+	// EnsureExtensions creates all given extensions in the database which do not exist yet.
+	// Existing extensions which are not part of the list are kept.
+	EnsureExtensions(ctx context.Context, database string, extensions []string) error
+}

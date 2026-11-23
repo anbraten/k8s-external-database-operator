@@ -149,6 +149,22 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		log.Info("Created user and granted access to database")
 	}
 
+	// Create extensions if necessary
+	if database.Spec.Postgres != nil && len(database.Spec.Postgres.Extensions) > 0 {
+		extensionAdapter, ok := db.(adapters.ExtensionAdapter)
+		if !ok {
+			err = errors.NewBadRequest("Extensions are not supported by database type '" + database.Spec.Type + "'")
+			log.Error(err, "Can't create extensions")
+			return ctrl.Result{}, err
+		}
+
+		err = extensionAdapter.EnsureExtensions(ctx, database.Spec.Database, database.Spec.Postgres.Extensions)
+		if err != nil {
+			log.Error(err, "Can't create extensions", "extensions", database.Spec.Postgres.Extensions)
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 

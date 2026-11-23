@@ -50,7 +50,7 @@ services:
       retries: 20
 
   postgres:
-    image: postgres:18.7@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
+    image: pgvector/pgvector:0.8.7-pg18@sha256:38681dc6eaf55308e2a4c6de392d131652dcfac70e1263e35cd9b5ea3fe39782
     ports:
       - 5432:5432
     environment:

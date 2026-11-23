@@ -135,6 +135,52 @@ func (adapter postgresAdapter) DeleteDatabaseUser(ctx context.Context, database 
 	return err
 }
 
+// EnsureExtensions creates the given extensions in the database. Extensions are created by the admin
+// user of the operator, as most extensions (e.g. vector) are not trusted and therefore can't be
+// created by the database user itself.
+func (adapter postgresAdapter) EnsureExtensions(ctx context.Context, database string, extensions []string) error {
+	if len(extensions) == 0 {
+		return nil
+	}
+
+	conn, err := adapter.connectToDatabase(ctx, database)
+	if err != nil {
+		return err
+	}
+	defer conn.Close(ctx)
+
+	for _, extension := range extensions {
+		if err := IsValidIdentifier(extension); err != nil {
+			return err
+		}
+
+		var exists bool
+		err = conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = $1);", extension).Scan(&exists)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+
+		var available bool
+		err = conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = $1);", extension).Scan(&available)
+		if err != nil {
+			return err
+		}
+		if !available {
+			return fmt.Errorf("extension '%s' is not installed on the postgres server", extension)
+		}
+
+		query := fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS \"%s\";", extension)
+		if _, err = conn.Exec(ctx, query); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (adapter postgresAdapter) roleExists(ctx context.Context, username string) (bool, error) {
 	var exists bool
 	err := adapter.db.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = $1);", username).Scan(&exists)
