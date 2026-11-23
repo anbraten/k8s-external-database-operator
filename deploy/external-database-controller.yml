@@ -49,8 +49,25 @@ spec:
                 description: Name of the database
                 type: string
               password:
-                description: Password of the database user
+                description: Password of the database user. Prefer passwordSecretRef
+                  to keep the password out of the resource.
                 type: string
+              passwordSecretRef:
+                description: Reference to a key of a secret in the namespace of the
+                  Database which contains the password of the database user
+                properties:
+                  key:
+                    description: Key in the secret which contains the value
+                    minLength: 1
+                    type: string
+                  name:
+                    description: Name of the secret
+                    minLength: 1
+                    type: string
+                required:
+                - key
+                - name
+                type: object
               type:
                 description: 'Type of the database. (currently supported: mysql, couchdb,
                   mongo, postgres)'
@@ -60,12 +77,20 @@ spec:
                   to this database
                 type: string
             type: object
+            x-kubernetes-validations:
+            - message: only one of password or passwordSecretRef may be set
+              rule: '!(has(self.password) && has(self.passwordSecretRef))'
           status:
             description: DatabaseStatus defines the observed state of Database
             properties:
               created:
                 description: Has database been created?
                 type: boolean
+              passwordVersion:
+                description: |-
+                  Identifies the password which has been applied to the database user last
+                  (source and its version, not the password itself). Used to detect password changes.
+                type: string
             required:
             - created
             type: object
@@ -124,6 +149,14 @@ kind: ClusterRole
 metadata:
   name: external-database-operator-manager-role
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - anbraten.github.io
   resources:
