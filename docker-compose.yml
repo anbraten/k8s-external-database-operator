@@ -1,6 +1,6 @@
 services:
   couchdb:
-    image: couchdb:3.5
+    image: couchdb:3.5.3@sha256:907eab5b7e55ab7cfd241d39b90b2a335ea40bef82acee5a37388c08bf201dda
     ports:
       - 5984:5984
     environment:
@@ -13,7 +13,7 @@ services:
       retries: 20
 
   mongodb:
-    image: mongo:8.0
+    image: mongo:8.0.38@sha256:479e85ced54ffb8a40dade1dcde2da2a9ae858515b9415e9cc54bfb8f0575d01
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: "pA_sw0rd"
@@ -26,7 +26,7 @@ services:
       retries: 20
 
   mongo-express:
-    image: mongo-express:1
+    image: mongo-express:1.0.2@sha256:1b23d7976f0210dbec74045c209e52fbb26d29b2e873d6c6fa3d3f0ae32c2a64
     profiles: ["tools"]
     ports:
       - 8081:8081
@@ -38,7 +38,7 @@ services:
       - mongodb
 
   mysql:
-    image: mysql:8.4
+    image: mysql:8.4.13@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902
     ports:
       - 3306:3306
     environment:
@@ -50,7 +50,7 @@ services:
       retries: 20
 
   postgres:
-    image: postgres:18
+    image: postgres:18.7@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
     ports:
       - 5432:5432
     environment:
@@ -63,7 +63,7 @@ services:
       retries: 20
 
   mssql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-CU28-ubuntu-22.04@sha256:4525e3efac9f3e241cb003bb2ff2a82818b502f37e12049d788b1a9fa7e13b7f
     ports:
       - 1433:1433
     environment:

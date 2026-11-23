@@ -2,6 +2,8 @@ module github.com/anbraten/k8s-external-database-operator
 
 go 1.27.0
 
+toolchain go1.27.4
+
 require (
 	github.com/go-kivik/kivik/v4 v4.5.2
 	github.com/go-logr/logr v1.4.4

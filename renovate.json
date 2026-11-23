@@ -3,7 +3,9 @@
   "extends": [
     "config:recommended",
     ":semanticCommits",
-    ":dependencyDashboard"
+    ":dependencyDashboard",
+    "docker:pinDigests",
+    "helpers:pinGitHubActionDigestsToSemver"
   ],
   "postUpdateOptions": ["gomodTidy"],
   "customManagers": [
@@ -12,13 +14,13 @@
       "description": "Update tool versions in the Makefile annotated with '# renovate: datasource=... depName=...'",
       "managerFilePatterns": ["/(^|/)Makefile$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>[^\\s]+?)\\s+[A-Z_]+_VERSION \\?= (?<currentValue>[^\\s]+)"
+        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>[^\\s]+?)\\s+[A-Z0-9_]+_VERSION \\?= (?<currentValue>[^\\s]+)"
       ]
     }
   ],
   "packageRules": [
     {
-      "description": "Kubernetes libraries and controller-runtime have to be updated together",
+      "description": "Kubernetes libraries, controller-runtime and controller-gen have to be updated together",
       "groupName": "kubernetes",
       "matchPackageNames": [
         "k8s.io/**",
