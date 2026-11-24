@@ -149,6 +149,15 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		log.Info("Created user and granted access to database")
 	}
 
+	// Apply settings specific to the database type (e.g. spec.postgres)
+	if specificSpecAdapter, ok := db.(adapters.SpecificSpecAdapter); ok {
+		err = specificSpecAdapter.ApplyAdapterSpecificSpec(ctx, database.Spec)
+		if err != nil {
+			log.Error(err, "Can't apply database type specific settings")
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 

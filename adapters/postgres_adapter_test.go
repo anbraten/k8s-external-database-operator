@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/anbraten/k8s-external-database-operator/adapters"
+	"github.com/anbraten/k8s-external-database-operator/api/v1alpha1"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -122,5 +124,89 @@ func TestPostgresRepairsUserWithoutSchemaPrivileges(t *testing.T) {
 	}
 	if err := clientConnectTest(ctx, databaseName, databaseUsername, databasePassword); err != nil {
 		t.Fatalf("Error using database with repaired user: %s", err)
+	}
+}
+
+func TestPostgresApplyAdapterSpecificSpecExtensions(t *testing.T) {
+	ctx, adapter, _ := preparePostgresDB(t)
+	databaseName := "extension-db_123"
+	databaseUsername := "extension-user_123"
+	databasePassword := "top_secret-123!"
+
+	specificSpecAdapter, ok := adapter.(adapters.SpecificSpecAdapter)
+	if !ok {
+		t.Fatalf("Expected postgres adapter to support adapter specific settings")
+	}
+	applyExtensions := func(extensions ...string) error {
+		return specificSpecAdapter.ApplyAdapterSpecificSpec(ctx, v1alpha1.DatabaseSpec{
+			Type:     "postgres",
+			Database: databaseName,
+			Postgres: &v1alpha1.PostgresSpec{Extensions: extensions},
+		})
+	}
+
+	t.Cleanup(func() {
+		if err := adapter.DeleteDatabaseUser(ctx, databaseName, databaseUsername); err != nil {
+			t.Errorf("Error deleting database user: %s", err)
+		}
+		if err := adapter.DeleteDatabase(ctx, databaseName); err != nil {
+			t.Errorf("Error deleting database: %s", err)
+		}
+		adapter.Close(ctx)
+	})
+
+	if err := adapter.CreateDatabase(ctx, databaseName); err != nil {
+		t.Fatalf("Error creating database: %s", err)
+	}
+	if err := adapter.CreateDatabaseUser(ctx, databaseName, databaseUsername, databasePassword); err != nil {
+		t.Fatalf("Error creating database user: %s", err)
+	}
+
+	// vector is not a trusted extension, so the database user can't create it on its own
+	client, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@localhost:5432/%s?sslmode=disable", databaseUsername, url.QueryEscape(databasePassword), databaseName))
+	if err != nil {
+		t.Fatalf("Error connecting as database user: %s", err)
+	}
+	defer client.Close(ctx)
+	if _, err := client.Exec(ctx, "CREATE EXTENSION vector;"); err == nil {
+		t.Fatalf("Expected database user to be unable to create the vector extension")
+	}
+
+	// no postgres settings is a no-op
+	if err := specificSpecAdapter.ApplyAdapterSpecificSpec(ctx, v1alpha1.DatabaseSpec{Type: "postgres", Database: databaseName}); err != nil {
+		t.Fatalf("Error applying empty postgres settings: %s", err)
+	}
+
+	// called twice to check idempotency
+	for i := 0; i < 2; i++ {
+		if err := applyExtensions("vector", "pg_trgm"); err != nil {
+			t.Fatalf("Error ensuring extensions (run %d): %s", i+1, err)
+		}
+	}
+
+	// the database user can use the extensions
+	if _, err := client.Exec(ctx, "CREATE TABLE items (id int, embedding vector(3));"); err != nil {
+		t.Fatalf("Error creating table with vector column: %s", err)
+	}
+	if _, err := client.Exec(ctx, "INSERT INTO items VALUES (1, '[1,2,3]'), (2, '[4,5,6]');"); err != nil {
+		t.Fatalf("Error inserting vectors: %s", err)
+	}
+	var nearest int
+	if err := client.QueryRow(ctx, "SELECT id FROM items ORDER BY embedding <-> '[3,1,2]' LIMIT 1;").Scan(&nearest); err != nil {
+		t.Fatalf("Error querying vectors: %s", err)
+	}
+	if nearest != 1 {
+		t.Fatalf("Expected nearest item to be 1, got %d", nearest)
+	}
+
+	// extensions which aren't installed on the server are reported
+	err = applyExtensions("does_not_exist")
+	if err == nil || !strings.Contains(err.Error(), "not installed") {
+		t.Fatalf("Expected error for missing extension, got: %v", err)
+	}
+
+	// invalid extension names are rejected
+	if err := applyExtensions(`vector"; DROP DATABASE postgres; --`); err == nil {
+		t.Fatalf("Expected error for invalid extension name")
 	}
 }

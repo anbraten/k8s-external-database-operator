@@ -30,6 +30,33 @@ spec:
 - postgres :white_check_mark:
 - mssql :white_check_mark:
 
+## Database type specific settings
+
+### Postgres
+
+Extensions (e.g. [pgvector](https://github.com/pgvector/pgvector)) can be created in the database by the operator.
+As most extensions are not trusted, the database user can't create them on its own.
+The extensions have to be installed on the postgres server (e.g. by using the `pgvector/pgvector` image).
+
+```yaml
+apiVersion: anbraten.github.io/v1alpha1
+kind: Database
+metadata:
+  name: guestbook-database
+spec:
+  type: postgres
+  database: guestbook
+  username: guestbook-admin
+  password: iwonttellyou
+  postgres:
+    extensions:
+      - vector
+```
+
+Extensions are created on the next reconcile, so they can be added to existing databases as well.
+Extensions removed from the list are **not** dropped, as this would delete all data using them (e.g. all `vector` columns).
+The `postgres` settings can only be used with `type: postgres`.
+
 ## Deployment
 
 1. Adjust the secrets in `deploy/database-secrets.yml` to your needs.
