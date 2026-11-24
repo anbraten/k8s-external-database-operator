@@ -2,7 +2,9 @@ package adapters_test
 
 import (
 	"context"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/anbraten/k8s-external-database-operator/adapters"
 )
@@ -68,12 +70,22 @@ func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdap
 		t.Fatalf("Error updating password of database user: %s", err)
 	}
 
-	// then: only the new password works
-	if err = clientConnectTest(ctx, databaseName, databaseUsername, newPassword); err != nil {
+	// then: only the new password works. Some databases (e.g. couchdb with its auth cache) apply
+	// the new password asynchronously, so it may take a moment until it is used.
+	err = eventually(func() error {
+		return clientConnectTest(ctx, databaseName, databaseUsername, newPassword)
+	})
+	if err != nil {
 		t.Fatalf("Error connecting to database with new password: %s", err)
 	}
-	if err = clientConnectTest(ctx, databaseName, databaseUsername, databasePassword); err == nil {
-		t.Fatalf("Expected old password to be rejected after the update")
+	err = eventually(func() error {
+		if clientConnectTest(ctx, databaseName, databaseUsername, databasePassword) == nil {
+			return errors.New("old password is still accepted")
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Expected old password to be rejected after the update: %s", err)
 	}
 
 	hasDatabaseUserWithAccess, err = adapter.HasDatabaseUserWithAccess(ctx, databaseName, databaseUsername)
@@ -81,6 +93,18 @@ func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdap
 		t.Fatalf("Error checking database user access after password update: %s", err)
 	} else if !hasDatabaseUserWithAccess {
 		t.Fatalf("Database user lost access after password update")
+	}
+}
+
+// eventually retries check until it succeeds or the timeout is reached and returns the last error
+func eventually(check func() error) error {
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		err := check()
+		if err == nil || time.Now().After(deadline) {
+			return err
+		}
+		time.Sleep(200 * time.Millisecond)
 	}
 }
 
