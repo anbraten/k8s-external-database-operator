@@ -86,6 +86,20 @@ func (adapter couchdbAdapter) CreateDatabaseUser(ctx context.Context, database s
 	return db.SetSecurity(ctx, sc)
 }
 
+func (adapter couchdbAdapter) UpdateDatabaseUserPassword(ctx context.Context, database string, username string, password string) error {
+	userDB := adapter.db.DB("_users")
+
+	user := map[string]interface{}{}
+	if err := userDB.Get(ctx, kivik.UserPrefix+username).ScanDoc(&user); err != nil {
+		return err
+	}
+
+	// couchdb replaces the plain password with its hash when saving the document
+	user["password"] = password
+	_, err := userDB.Put(ctx, kivik.UserPrefix+username, user)
+	return err
+}
+
 func (adapter couchdbAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
 	userDB := adapter.db.DB("_users")
 	rev, err := userDB.Get(ctx, kivik.UserPrefix+username).Rev()

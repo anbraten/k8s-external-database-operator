@@ -35,7 +35,7 @@ func prepareMsSqlDB(t *testing.T) (context.Context, adapters.DatabaseAdapter, Cl
 		}
 		defer client.Close()
 
-		_, err = client.ExecContext(ctx, "CREATE TABLE test (id int);")
+		_, err = client.ExecContext(ctx, "IF OBJECT_ID('test') IS NULL CREATE TABLE test (id int);")
 		return err
 	}
 

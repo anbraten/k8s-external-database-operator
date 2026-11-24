@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    name: Test adapters
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
@@ -26,8 +26,8 @@ jobs:
       - name: Start containers
         run: docker compose up -d --wait
 
-      - name: Test adapters
-        run: go test -v -race ./adapters/...
+      - name: Test
+        run: make test
 
       - name: Stop containers
         if: always()

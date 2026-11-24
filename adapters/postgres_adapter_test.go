@@ -36,7 +36,7 @@ func preparePostgresDB(t *testing.T) (context.Context, adapters.DatabaseAdapter,
 		}
 		defer client.Close(ctx)
 
-		_, err = client.Exec(ctx, "CREATE TABLE test (id int);")
+		_, err = client.Exec(ctx, "CREATE TABLE IF NOT EXISTS test (id int);")
 		return err
 	}
 
