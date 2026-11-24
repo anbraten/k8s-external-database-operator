@@ -14,7 +14,8 @@ func testHelper(t *testing.T, ctx context.Context, adapter adapters.DatabaseAdap
 	var err error
 	databaseName := "guestbook-admin_123"
 	databaseUsername := "guestbook-admin_123"
-	databasePassword := "top_secret-123!"
+	// contains a single quote and a backslash to verify the password is quoted correctly
+	databasePassword := `top'secret\123!`
 
 	t.Cleanup(func() {
 		if err = adapter.DeleteDatabaseUser(ctx, databaseName, databaseUsername); err != nil {
@@ -69,7 +70,7 @@ func cleanupTestHelper(t *testing.T, ctx context.Context, adapter adapters.Datab
 	if result {
 		t.Fatalf("database and user existing but expecting to be non-existing")
 	}
-	
+
 	// TODO: test db.DeleteDatabaseUser
 	// TODO: test db.DeleteDatabase
 }

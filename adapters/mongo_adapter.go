@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type mongoAdapter struct {
@@ -46,7 +46,7 @@ func (adapter mongoAdapter) HasDatabaseUserWithAccess(ctx context.Context, datab
 		return false, errors.New("cant find users array in result")
 	}
 
-	users, err := usersArr.Elements()
+	users, err := usersArr.Values()
 	if err != nil {
 		return false, err
 	}
@@ -73,7 +73,7 @@ func (adapter mongoAdapter) Close(ctx context.Context) error {
 
 func GetMongoConnection(ctx context.Context, url string) (*mongoAdapter, error) {
 	clientOpts := options.Client().ApplyURI(url)
-	client, err := mongo.Connect(ctx, clientOpts)
+	client, err := mongo.Connect(clientOpts)
 	if err != nil {
 		return nil, err
 	}

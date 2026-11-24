@@ -36,6 +36,49 @@ spec:
 1. Deploy them using: `kubectl apply -f deploy/database-secrets.yml`
 1. Deploy the controller using: `kubectl apply -f https://github.com/anbraten/k8s-external-database-operator/releases/latest/download/external-database-controller.yml`
 
+## Upgrading
+
+`kubectl apply` does not delete objects that have been removed from the manifest. After upgrading, delete them manually.
+
+### From 0.0.x (kube-rbac-proxy) to the built-in metrics authentication
+
+The `kube-rbac-proxy` sidecar has been replaced by the built-in authentication of the metrics endpoint (see [Metrics](#metrics)). The metrics service still listens on port `8443` (`https`), so existing scrapers keep working. Remove the leftover objects with:
+
+```bash
+kubectl delete --ignore-not-found clusterrolebinding external-database-operator-proxy-rolebinding
+kubectl delete --ignore-not-found clusterrole external-database-operator-proxy-role
+kubectl delete --ignore-not-found -n external-database-operator-system configmap external-database-operator-manager-config
+```
+
+PostgreSQL users created by older versions on PostgreSQL >= 15 are missing the privileges on the `public` schema. They are repaired automatically on the next reconcile after the upgrade.
+
+## Metrics
+
+The controller exposes Prometheus metrics via HTTPS on port `8443` (service `external-database-operator-controller-manager-metrics-service`).
+Every request is authenticated and authorized against the Kubernetes API, so the scraping client has to send a service account token and needs permission to `get` the `/metrics` non-resource URL.
+To grant this permission, bind the `external-database-operator-metrics-reader` ClusterRole to the service account of your scraper (e.g. Prometheus):
+
+```bash
+kubectl create clusterrolebinding prometheus-external-database-metrics \
+  --clusterrole=external-database-operator-metrics-reader \
+  --serviceaccount=<prometheus-namespace>:<prometheus-service-account>
+```
+
+## Development
+
+Start the databases and run the adapter tests:
+
+```bash
+docker compose up -d --wait
+go test ./adapters/...
+```
+
+Run all tests (including the controller tests using [envtest](https://book.kubebuilder.io/reference/envtest)):
+
+```bash
+make test
+```
+
 ## Release
 
 To release a new version of the controller run:

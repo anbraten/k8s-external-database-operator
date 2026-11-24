@@ -3,8 +3,8 @@ package adapters
 import (
 	"context"
 
-	_ "github.com/go-kivik/couchdb/v4" // The CouchDB driver
 	"github.com/go-kivik/kivik/v4"
+	_ "github.com/go-kivik/kivik/v4/couchdb" // The CouchDB driver
 )
 
 type securityConfig struct {
@@ -88,13 +88,16 @@ func (adapter couchdbAdapter) CreateDatabaseUser(ctx context.Context, database s
 
 func (adapter couchdbAdapter) DeleteDatabaseUser(ctx context.Context, database string, username string) error {
 	userDB := adapter.db.DB("_users")
-	row := userDB.Get(ctx, kivik.UserPrefix+username)
-	_, err := userDB.Delete(ctx, kivik.UserPrefix+username, row.Rev())
+	rev, err := userDB.Get(ctx, kivik.UserPrefix+username).Rev()
+	if err != nil {
+		return err
+	}
+	_, err = userDB.Delete(ctx, kivik.UserPrefix+username, rev)
 	return err
 }
 
 func (adapter couchdbAdapter) Close(ctx context.Context) error {
-	return adapter.db.Close(ctx)
+	return adapter.db.Close()
 }
 
 func GetCouchdbConnection(ctx context.Context, url string) (*couchdbAdapter, error) {
